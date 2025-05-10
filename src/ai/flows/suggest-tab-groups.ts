@@ -21,13 +21,13 @@ const ExistingGroupSchema = z.object({
 
 const SuggestTabGroupsInputSchema = z.object({
   ungroupedUrls: z.array(z.string().url()).describe('A list of URLs of the currently ungrouped tabs that need organization.'),
-  existingGroups: z.array(ExistingGroupSchema).optional().describe('A list of already existing tab groups, for context and potential additions.'),
+  existingGroups: z.array(ExistingGroupSchema).optional().describe('A list of already existing tab groups, for context and potential additions. Analyze these groups to understand their themes based on their names and current tabs.'),
 });
 export type SuggestTabGroupsInput = z.infer<typeof SuggestTabGroupsInputSchema>;
 
 const SuggestedGroupSchema = z.object({
   groupName: z.string().describe('The suggested name for the tab group. If adding to an existing group, this will be the name of that existing group.'),
-  tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
+  tabUrls: z.array(z.string().url()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
 });
 
 const SuggestTabGroupsOutputSchema = z.array(SuggestedGroupSchema);
@@ -67,6 +67,7 @@ Output Instructions:
 - If an \`existingGroup\` is NOT modified (i.e., no \`ungroupedUrls\` are added to it), DO NOT include it in your output array.
 - Prefer adding to non-custom (\`isCustom: false\`) existing groups if a thematic fit exists.
 - If adding to a CUSTOM (\`isCustom: true\`) existing group, ensure the thematic fit is very strong.
+- When considering adding to an \`existingGroup\`, analyze its \`groupName\` and current \`tabUrls\` to understand its theme or purpose. Be flexible: an ungrouped tab might belong to an existing group even if its title doesn't perfectly match the group's name, as long as it aligns with the group's overall topic and content. Your primary goal is logical organization.
 - If some \`ungroupedUrls\` cannot be reasonably grouped or added to existing groups, you can omit them from your suggestions (they will remain ungrouped).
 - If no \`ungroupedUrls\` are provided, or no actions are taken (no new groups created, no tabs added to existing groups), return an empty array.
 
