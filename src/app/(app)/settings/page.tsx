@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -15,63 +16,56 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-
-// Mock language options for settings page
-const languageOptions = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Español" },
-  { value: "fr", label: "Français" },
-  // Add more languages as needed
-];
+import { useTranslation } from '@/lib/i18n';
 
 export default function SettingsPage() {
   const { toast } = useToast();
+  const { locale, setLocale, supportedLocales, t } = useTranslation();
+  
   const [autoCloseInactiveTabs, setAutoCloseInactiveTabs] = useState(false);
   const [inactiveThreshold, setInactiveThreshold] = useState(30); // Default to 30 minutes
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [aiPreferences, setAiPreferences] = useState("");
 
-  // Load settings from localStorage on component mount
+  // Load non-language settings from localStorage on component mount
   useEffect(() => {
-    const storedSettings = localStorage.getItem('tabwise_settings');
+    const storedSettings = localStorage.getItem('tabwise_app_settings');
     if (storedSettings) {
       const settings = JSON.parse(storedSettings);
       setAutoCloseInactiveTabs(settings.autoCloseInactiveTabs ?? false);
       setInactiveThreshold(settings.inactiveThreshold ?? 30);
-      setSelectedLanguage(settings.selectedLanguage ?? "en");
       setAiPreferences(settings.aiPreferences ?? "");
     }
   }, []);
 
   const handleSaveSettings = () => {
-    const settings = {
+    const appSettings = {
       autoCloseInactiveTabs,
       inactiveThreshold,
-      selectedLanguage,
       aiPreferences,
     };
-    localStorage.setItem('tabwise_settings', JSON.stringify(settings));
+    localStorage.setItem('tabwise_app_settings', JSON.stringify(appSettings));
+    // Language is saved by LocaleProvider
     toast({
-      title: "Settings Saved",
-      description: "Your preferences have been updated.",
+      title: t("settingsSaved"),
+      description: t("settingsSavedDesc"),
     });
   };
 
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+      <h1 className="text-3xl font-bold tracking-tight">{t("settings")}</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Inactive Tab Management</CardTitle>
-          <CardDescription>Configure how TabWise handles inactive tabs.</CardDescription>
+          <CardTitle>{t("inactiveTabManagement")}</CardTitle>
+          <CardDescription>{t("inactiveTabManagementDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between space-x-2 p-4 border rounded-lg">
             <Label htmlFor="auto-close-tabs" className="flex flex-col space-y-1">
-              <span>Automatically suggest closing inactive tabs</span>
+              <span>{t("autoSuggestCloseInactive")}</span>
               <span className="font-normal leading-snug text-muted-foreground">
-                Enable to receive AI-powered suggestions for closing tabs you haven't used.
+                {t("autoSuggestCloseInactiveDesc")}
               </span>
             </Label>
             <Switch
@@ -84,7 +78,7 @@ export default function SettingsPage() {
           {autoCloseInactiveTabs && (
             <div className="space-y-2 p-4 border rounded-lg">
               <Label htmlFor="inactive-threshold">
-                Inactive Threshold ({inactiveThreshold} minutes)
+                {t("inactiveThreshold", { threshold: inactiveThreshold })}
               </Label>
               <Slider
                 id="inactive-threshold"
@@ -96,7 +90,7 @@ export default function SettingsPage() {
                 className="my-2"
               />
               <p className="text-sm text-muted-foreground">
-                Tabs inactive for longer than this duration will be considered for closure suggestions.
+                {t("inactiveThresholdDesc")}
               </p>
             </div>
           )}
@@ -105,20 +99,20 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>AI Preferences</CardTitle>
-          <CardDescription>Provide hints to the AI for better tab grouping and suggestions.</CardDescription>
+          <CardTitle>{t("aiPreferences")}</CardTitle>
+          <CardDescription>{t("aiPreferencesDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
            <div>
-            <Label htmlFor="ai-preferences-input">User Preferences for AI</Label>
+            <Label htmlFor="ai-preferences-input">{t("userPreferencesForAI")}</Label>
             <Input 
               id="ai-preferences-input"
-              placeholder="e.g., 'Prioritize work-related tabs', 'Group social media separately'"
+              placeholder={t("userPreferencesForAIPlaceholder")}
               value={aiPreferences}
               onChange={(e) => setAiPreferences(e.target.value)}
             />
             <p className="text-sm text-muted-foreground mt-1">
-              This text will be sent to the AI to help tailor its suggestions.
+              {t("userPreferencesForAIDesc")}
             </p>
            </div>
         </CardContent>
@@ -126,33 +120,30 @@ export default function SettingsPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Localization</CardTitle>
-          <CardDescription>Choose your preferred language for the application.</CardDescription>
+          <CardTitle>{t("localization")}</CardTitle>
+          <CardDescription>{t("localizationDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="language-select">Language</Label>
-            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+            <Label htmlFor="language-select">{t("language")}</Label>
+            <Select value={locale} onValueChange={setLocale}>
               <SelectTrigger id="language-select" className="w-[180px]">
-                <SelectValue placeholder="Select language" />
+                <SelectValue placeholder={t("selectLanguage")} />
               </SelectTrigger>
               <SelectContent>
-                {languageOptions.map(lang => (
-                  <SelectItem key={lang.value} value={lang.value}>
-                    {lang.label}
+                {supportedLocales.map(lang => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {t(`language.${lang.code}`, {defaultValue: lang.name})}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-             <p className="text-sm text-muted-foreground mt-1">
-              Language selection is currently a placeholder and does not change the UI language.
-            </p>
           </div>
         </CardContent>
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={handleSaveSettings}>Save Settings</Button>
+        <Button onClick={handleSaveSettings}>{t("saveSettings")}</Button>
       </div>
     </div>
   );

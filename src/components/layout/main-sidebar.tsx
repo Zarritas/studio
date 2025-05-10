@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -15,32 +16,34 @@ import {
   SidebarSeparator,
   SidebarTrigger
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Home, Settings, UploadCloud, Bookmark, Info, LogOut, Layers3 } from 'lucide-react';
+import { Home, Settings, UploadCloud, Bookmark, LogOut, Layers3 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
-
-const mainNavItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/settings', label: 'Settings', icon: Settings },
-];
-
-const importNavItems = [
-  { label: 'Import Active Tabs', icon: UploadCloud, action: () => alert('Import Active Tabs (Not Implemented)') },
-  { label: 'Import Bookmarks', icon: Bookmark, action: () => alert('Import Bookmarks (Not Implemented)') },
-];
+import { useTranslation } from '@/lib/i18n';
 
 
 export function MainSidebar() {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const { t } = useTranslation();
+
+  const mainNavItems = [
+    { href: '/dashboard', label: t('dashboard'), icon: Home },
+    { href: '/settings', label: t('settings'), icon: Settings },
+  ];
+  
+  const importNavItems = [
+    { label: t('importActiveTabs'), icon: UploadCloud, action: () => alert('Import Active Tabs (Not Implemented)') },
+    { label: t('importBookmarks'), icon: Bookmark, action: () => alert('Import Bookmarks (Not Implemented)') },
+  ];
+
 
   return (
     <Sidebar side="left" variant="sidebar" collapsible="icon">
       <SidebarHeader className="p-4 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold group-data-[collapsible=icon]:hidden">
            <Layers3 className="h-6 w-6 text-primary" />
-           <span>TabWise</span>
+           <span>{t('tabwise')}</span>
         </Link>
          <div className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full hidden">
            <Layers3 className="h-6 w-6 text-primary" />
@@ -51,7 +54,7 @@ export function MainSidebar() {
       <ScrollArea className="flex-1">
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+            <SidebarGroupLabel>{t('navigation', {defaultValue: 'Navigation'})}</SidebarGroupLabel>
             <SidebarMenu>
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
@@ -72,7 +75,7 @@ export function MainSidebar() {
           <SidebarSeparator />
 
           <SidebarGroup>
-            <SidebarGroupLabel>Tools</SidebarGroupLabel>
+            <SidebarGroupLabel>{t('tools', {defaultValue: 'Tools'})}</SidebarGroupLabel>
             <SidebarMenu>
               {importNavItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
@@ -89,8 +92,8 @@ export function MainSidebar() {
       <SidebarFooter className="p-4 border-t border-sidebar-border">
          <SidebarMenu>
             <SidebarMenuItem>
-                <SidebarMenuButton onClick={logout} tooltip="Log Out">
-                    <LogOut /> <span>Log Out</span>
+                <SidebarMenuButton onClick={logout} tooltip={t('logout')}>
+                    <LogOut /> <span>{t('logout')}</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
          </SidebarMenu>

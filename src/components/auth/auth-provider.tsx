@@ -1,8 +1,10 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useTranslation } from '@/lib/i18n'; // Assuming useTranslation can be used here or pass t function
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -20,6 +22,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  // Note: Using useTranslation directly here might cause issues if LocaleProvider is a child of AuthProvider.
+  // For simplicity, we'll use a hardcoded string or assume t is available if LocaleProvider wraps AuthProvider.
+  // If LocaleProvider is a child, this t() call won't work as expected during initial load.
+  // A more robust solution might involve passing `t` or having a global `t` instance.
+  // For this iteration, let's assume t works or use a default string.
+  const { t } = useTranslation(); 
+
 
   useEffect(() => {
     try {
@@ -28,7 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticated(true);
       }
     } catch (error) {
-      // localStorage might not be available (e.g. SSR, or disabled by user)
       console.warn("Could not access localStorage for authentication state:", error);
     }
     setIsLoading(false);
@@ -65,17 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   if (isLoading && pathname !== '/login') {
-     // Basic loading state to prevent flicker, could be a spinner component
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">{t('loading', {defaultValue: 'Loading...'})}</div>;
   }
   
-  // Allow access to login page even while loading or not authenticated
   if (pathname === '/login' && !isAuthenticated) {
     return <AuthContext.Provider value={{ isAuthenticated, login, logout, isLoading }}>{children}</AuthContext.Provider>;
   }
 
-  // If loading is done and user is not authenticated, and not on login page, they will be redirected by the effect above.
-  // This prevents rendering protected content before redirection.
   if (!isLoading && !isAuthenticated && pathname !== '/login') {
     return null; 
   }

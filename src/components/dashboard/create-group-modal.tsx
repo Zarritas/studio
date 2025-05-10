@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -14,6 +15,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { FolderPlus } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 interface CreateGroupModalProps {
   onCreateGroup: (groupName: string) => void;
@@ -22,11 +24,12 @@ interface CreateGroupModalProps {
 export function CreateGroupModal({ onCreateGroup }: CreateGroupModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
+  const { t } = useTranslation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!groupName.trim()) {
-      alert("Group name cannot be empty.");
+      alert("Group name cannot be empty."); // This could also be translated
       return;
     }
     onCreateGroup(groupName.trim());
@@ -38,32 +41,32 @@ export function CreateGroupModal({ onCreateGroup }: CreateGroupModalProps) {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <FolderPlus className="mr-2 h-4 w-4" /> Create Custom Group
+          <FolderPlus className="mr-2 h-4 w-4" /> {t('createCustomGroup')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Custom Group</DialogTitle>
+          <DialogTitle>{t('createGroupModalTitle')}</DialogTitle>
           <DialogDescription>
-            Enter a name for your new custom tab group.
+            {t('createGroupModalDescription')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="group-name" className="text-right">
-              Name
+              {t('nameLabel')}
             </Label>
             <Input
               id="group-name"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               className="col-span-3"
-              placeholder="e.g., Work Projects"
+              placeholder={t('namePlaceholderWork')}
               required
             />
           </div>
           <DialogFooter>
-            <Button type="submit">Create Group</Button>
+            <Button type="submit">{t('createGroupButton')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

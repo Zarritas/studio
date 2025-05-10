@@ -1,7 +1,9 @@
+
 "use client"
 
 import * as React from "react"
 import { Languages } from "lucide-react"
+import { useTranslation } from "@/lib/i18n"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -11,38 +13,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-// Mock languages
-const languages = [
-  { code: "en", name: "English" },
-  { code: "es", name: "Español" },
-  { code: "fr", name: "Français" },
-]
-
 export function LanguageSwitcher() {
-  const [selectedLanguage, setSelectedLanguage] = React.useState(languages[0])
+  const { locale, setLocale, supportedLocales, t } = useTranslation();
 
-  // In a real app, this would integrate with an i18n library
   const handleLanguageChange = (langCode: string) => {
-    const lang = languages.find(l => l.code === langCode)
-    if (lang) {
-      setSelectedLanguage(lang)
-      // console.log(`Language changed to: ${lang.name}`)
-      // Here, you would typically call i18n.changeLanguage(langCode)
-    }
+    setLocale(langCode);
   }
+
+  const currentLanguageName = supportedLocales.find(l => l.code === locale)?.name || locale;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <Languages className="h-[1.2rem] w-[1.2rem]" />
-          <span className="sr-only">Change language - {selectedLanguage.name}</span>
+          <span className="sr-only">{t('changeLanguage')} - {currentLanguageName}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {languages.map((lang) => (
+        {supportedLocales.map((lang) => (
           <DropdownMenuItem key={lang.code} onClick={() => handleLanguageChange(lang.code)}>
-            {lang.name}
+            {/* Translates language name if a key like "language.en" exists, otherwise uses provided name */}
+            {t(`language.${lang.code}`, {defaultValue: lang.name})} 
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

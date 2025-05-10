@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -15,6 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { PlusCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 interface AddTabModalProps {
   onAddTab: (tab: Omit<Tab, 'id' | 'lastAccessed'>) => void;
@@ -25,22 +27,23 @@ export function AddTabModal({ onAddTab, triggerButton }: AddTabModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
+  const { t } = useTranslation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) {
-      alert("URL is required.");
+      alert("URL is required."); // This alert could also be translated if needed
       return;
     }
     try {
       new URL(url); // Validate URL
     } catch (_) {
-      alert("Invalid URL format.");
+      alert("Invalid URL format."); // This alert could also be translated
       return;
     }
 
     onAddTab({ 
-      title: title.trim() || new URL(url).hostname, // Default title to hostname if empty
+      title: title.trim() || new URL(url).hostname, 
       url: url.trim(),
       isPlaceholder: true
     });
@@ -54,46 +57,46 @@ export function AddTabModal({ onAddTab, triggerButton }: AddTabModalProps) {
       <DialogTrigger asChild>
         {triggerButton ? triggerButton : 
         <Button variant="outline">
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Tab
+          <PlusCircle className="mr-2 h-4 w-4" /> {t('addNewTab')}
         </Button>
         }
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Tab</DialogTitle>
+          <DialogTitle>{t('addTabModalTitle')}</DialogTitle>
           <DialogDescription>
-            Manually add a tab to your collection. It will appear in the 'Ungrouped Tabs' section.
+            {t('addTabModalDescription')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="tab-title" className="text-right">
-              Title
+              {t('titleLabel')}
             </Label>
             <Input
               id="tab-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="col-span-3"
-              placeholder="Optional tab title"
+              placeholder={t('titlePlaceholder')}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="tab-url" className="text-right">
-              URL
+              {t('urlLabel')}
             </Label>
             <Input
               id="tab-url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               className="col-span-3"
-              placeholder="https://example.com"
+              placeholder={t('urlPlaceholder')}
               type="url"
               required
             />
           </div>
           <DialogFooter>
-            <Button type="submit">Add Tab</Button>
+            <Button type="submit">{t('addTabButton')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

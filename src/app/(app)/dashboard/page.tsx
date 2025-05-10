@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -14,7 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { TabItem } from '@/components/dashboard/tab-item'; // Added import for TabItem
+import { TabItem } from '@/components/dashboard/tab-item';
+import { useTranslation } from '@/lib/i18n';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,16 +45,16 @@ export default function DashboardPage() {
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [aiSuggestionError, setAiSuggestionError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const ungroupedTabs = tabs.filter(tab => !tabGroups.some(group => group.tabs.some(t => t.id === tab.id)));
 
-  // AI Tab Grouping
   const handleSuggestTabGroups = async () => {
     setIsLoadingAI(true);
     setAiSuggestionError(null);
     const currentTabUrls = tabs.map(t => t.url);
     if (currentTabUrls.length === 0) {
-      toast({ title: "No tabs to group", description: "Add some tabs first.", variant: "destructive" });
+      toast({ title: t("noTabsToGroup"), description: t("noTabsToGroupDesc"), variant: "destructive" });
       setIsLoadingAI(false);
       return;
     }
@@ -68,17 +70,16 @@ export default function DashboardPage() {
         isCustom: false,
       }));
       
-      setTabGroups(prevGroups => [...prevGroups.filter(g => g.isCustom), ...newGroups]); // Keep custom groups, replace AI groups
-      toast({ title: "AI Group Suggestions Applied", description: `${newGroups.length} groups suggested.` });
+      setTabGroups(prevGroups => [...prevGroups.filter(g => g.isCustom), ...newGroups]);
+      toast({ title: t("aiGroupSuggestionsApplied"), description: t("aiGroupSuggestionsAppliedDesc", { count: newGroups.length }) });
     } catch (error) {
       console.error("Error suggesting tab groups:", error);
-      setAiSuggestionError("Failed to get AI tab group suggestions. Please try again.");
-      toast({ title: "AI Error", description: "Could not suggest tab groups.", variant: "destructive" });
+      setAiSuggestionError(t("aiSuggestionErrorDescription"));
+      toast({ title: t("aiError"), description: t("aiErrorGroupDesc"), variant: "destructive" });
     }
     setIsLoadingAI(false);
   };
 
-  // AI Inactive Tab Closure Suggestions
   const handleSuggestInactiveTabs = async () => {
     setIsLoadingAI(true);
     setAiSuggestionError(null);
@@ -86,13 +87,11 @@ export default function DashboardPage() {
     
     try {
       const input: SuggestInactiveTabsClosureInput = { tabActivityData };
-      // Optional: Add userPreferences if implemented
-      // input.userPreferences = "prefer to keep documentation tabs open longer";
       const suggestions: SuggestInactiveTabsClosureOutput = await suggestInactiveTabsClosure(input);
       
       if (suggestions.tabsToClose.length > 0) {
         toast({
-          title: "AI Suggests Closing Tabs",
+          title: t("aiSuggestsClosingTabs"),
           description: (
             <div>
               <p>{suggestions.reasoning}</p>
@@ -103,19 +102,19 @@ export default function DashboardPage() {
                 })}
               </ul>
               <Button size="sm" className="mt-2" onClick={() => removeTabsByUrl(suggestions.tabsToClose)}>
-                Close Suggested Tabs
+                {t("closeSuggestedTabs")}
               </Button>
             </div>
           ),
-          duration: 10000, // Longer duration for interactive toast
+          duration: 10000, 
         });
       } else {
-        toast({ title: "No Inactive Tabs Found", description: "All your tabs seem active or important according to the AI." });
+        toast({ title: t("noInactiveTabsFound"), description: t("noInactiveTabsFoundDesc") });
       }
     } catch (error) {
       console.error("Error suggesting inactive tabs:", error);
-      setAiSuggestionError("Failed to get AI inactive tab suggestions. Please try again.");
-      toast({ title: "AI Error", description: "Could not suggest inactive tabs.", variant: "destructive" });
+      setAiSuggestionError(t("aiSuggestionErrorDescription"));
+      toast({ title: t("aiError"), description: t("aiErrorInactiveDesc"), variant: "destructive" });
     }
     setIsLoadingAI(false);
   };
@@ -126,15 +125,15 @@ export default function DashboardPage() {
       prevGroups.map(group => ({
         ...group,
         tabs: group.tabs.filter(tab => !urlsToClose.includes(tab.url))
-      })).filter(group => group.tabs.length > 0 || group.isCustom) // Keep custom empty groups
+      })).filter(group => group.tabs.length > 0 || group.isCustom)
     );
-    toast({ title: "Tabs Closed", description: `${urlsToClose.length} tabs were closed.` });
+    toast({ title: t("tabsClosed"), description: t("tabsClosedDesc", { count: urlsToClose.length }) });
   };
 
   const handleAddTab = (newTab: Omit<Tab, 'id' | 'lastAccessed'>) => {
     const tabWithId: Tab = { ...newTab, id: `manual-${Date.now()}`, lastAccessed: Date.now() };
     setTabs(prevTabs => [...prevTabs, tabWithId]);
-    toast({ title: "Tab Added", description: `"${tabWithId.title}" has been added.` });
+    toast({ title: t("tabAdded"), description: t("tabAddedDesc", { title: tabWithId.title }) });
   };
 
   const handleCreateCustomGroup = (groupName: string) => {
@@ -145,7 +144,7 @@ export default function DashboardPage() {
       isCustom: true,
     };
     setTabGroups(prevGroups => [...prevGroups, newGroup]);
-    toast({ title: "Group Created", description: `Custom group "${groupName}" has been created.` });
+    toast({ title: t("groupCreated"), description: t("groupCreatedDesc", { name: groupName }) });
   };
 
   const handleRemoveTabFromGroup = (groupId: string, tabId: string) => {
@@ -160,7 +159,7 @@ export default function DashboardPage() {
 
   const handleRemoveGroup = (groupId: string) => {
     setTabGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
-    toast({ title: "Group Removed", variant: "destructive" });
+    toast({ title: t("groupRemoved"), variant: "destructive" });
   };
 
   const handleExportGroup = (group: TabGroupType) => {
@@ -172,17 +171,15 @@ export default function DashboardPage() {
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
-    toast({ title: "Group Exported", description: `"${group.name}" exported as JSON.` });
+    toast({ title: t("groupExported"), description: t("groupExportedDesc", { name: group.name }) });
   };
 
   const handleDeleteAllGroups = () => {
     setTabGroups([]);
-    toast({ title: "All Groups Deleted", description: "All tab groups have been removed.", variant: "destructive" });
+    toast({ title: t("allGroupsDeleted"), description: t("allGroupsDeletedDesc"), variant: "destructive" });
   };
   
   const handleAddTabToGroup = (groupId: string) => {
-    // This is a placeholder. A real implementation would involve a modal to select a tab or enter a new one.
-    // For now, let's pick a random ungrouped tab if available.
     if (ungroupedTabs.length > 0) {
       const tabToAdd = ungroupedTabs[0];
       setTabGroups(prevGroups => 
@@ -190,9 +187,9 @@ export default function DashboardPage() {
           g.id === groupId ? {...g, tabs: [...g.tabs, tabToAdd]} : g
         )
       );
-      toast({title: "Tab added to group", description: `Tab "${tabToAdd.title}" added to group.`});
+      toast({title: t("tabAddedToGroup"), description: t("tabAddedToGroupDesc", { title: tabToAdd.title })});
     } else {
-      toast({title: "No ungrouped tabs", description: "Add new tabs or ungroup existing ones to add to this group.", variant: "destructive"});
+      toast({title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
     }
   };
 
@@ -202,13 +199,13 @@ export default function DashboardPage() {
         g.id === groupId ? {...g, name: newName} : g
       )
     );
-    toast({title: "Group Renamed", description: `Group name updated to "${newName}".`});
+    toast({title: t("groupRenamed"), description: t("groupRenamedDesc", { name: newName })});
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">TabWise Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("tabwiseDashboard")}</h1>
         <div className="flex flex-wrap gap-2">
           <AddTabModal onAddTab={handleAddTab} />
           <CreateGroupModal onCreateGroup={handleCreateCustomGroup} />
@@ -217,30 +214,29 @@ export default function DashboardPage() {
 
       <div className="flex flex-wrap gap-2 p-4 border rounded-lg shadow bg-card">
         <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI}>
-          <Zap className="mr-2 h-4 w-4" /> {isLoadingAI ? 'Suggesting...' : 'AI Suggest Groups'}
+          <Zap className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiSuggesting') : t('aiSuggestGroups')}
         </Button>
         <Button onClick={handleSuggestInactiveTabs} disabled={isLoadingAI}>
-          <Lightbulb className="mr-2 h-4 w-4" /> {isLoadingAI ? 'Analyzing...' : 'AI Suggest Close Tabs'}
+          <Lightbulb className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiAnalyzing') : t('aiSuggestCloseTabs')}
         </Button>
         {tabGroups.length > 0 && (
            <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" disabled={isLoadingAI}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete All Groups
+                <Trash2 className="mr-2 h-4 w-4" /> {t("deleteAllGroups")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle>{t("areYouSure")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete all tab groups.
-                  Ungrouped tabs will remain.
+                  {t("deleteAllGroupsConfirmation")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDeleteAllGroups} className={Button({variant: "destructive"}).className}>
-                  Yes, delete all
+                  {t("yesDeleteAll")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -251,7 +247,7 @@ export default function DashboardPage() {
       {aiSuggestionError && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>AI Suggestion Error</AlertTitle>
+          <AlertTitle>{t("aiSuggestionErrorTitle")}</AlertTitle>
           <AlertDescription>{aiSuggestionError}</AlertDescription>
         </Alert>
       )}
@@ -274,7 +270,7 @@ export default function DashboardPage() {
 
       {!isLoadingAI && tabGroups.length > 0 && (
         <div>
-          <h2 className="text-2xl font-semibold mb-4">Tab Groups</h2>
+          <h2 className="text-2xl font-semibold mb-4">{t("tabGroups")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tabGroups.map((group) => (
               <TabGroup
@@ -294,7 +290,7 @@ export default function DashboardPage() {
       {!isLoadingAI && ungroupedTabs.length > 0 && (
         <div className="mt-8">
            <Separator className="my-6" />
-          <h2 className="text-2xl font-semibold mb-4">Ungrouped Tabs ({ungroupedTabs.length})</h2>
+          <h2 className="text-2xl font-semibold mb-4">{t("ungroupedTabsCount", { count: ungroupedTabs.length })}</h2>
            <div className="space-y-2">
             {ungroupedTabs.map(tab => (
               <TabItem key={tab.id} tab={tab} onRemove={(tabId) => setTabs(tabs.filter(t => t.id !== tabId))} />
@@ -306,14 +302,14 @@ export default function DashboardPage() {
       {!isLoadingAI && tabGroups.length === 0 && ungroupedTabs.length === 0 && (
         <div className="text-center py-10">
           <Layers3 className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-2 text-xl font-semibold">No Tabs or Groups</h3>
+          <h3 className="mt-2 text-xl font-semibold">{t("noTabsOrGroups")}</h3>
           <p className="mt-1 text-muted-foreground">
-            Add some tabs or use AI suggestions to get started.
+            {t("noTabsOrGroupsDescription")}
           </p>
           <div className="mt-6 flex justify-center gap-2">
              <AddTabModal onAddTab={handleAddTab} />
              <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI}>
-                <Zap className="mr-2 h-4 w-4" /> AI Suggest Groups
+                <Zap className="mr-2 h-4 w-4" /> {t('aiSuggestGroups')}
             </Button>
           </div>
         </div>
