@@ -15,19 +15,19 @@ import {z} from 'genkit';
 
 const ExistingGroupSchema = z.object({
   groupName: z.string().describe('The name of the existing tab group.'),
-  tabUrls: z.array(z.string()).describe('The URLs of the tabs currently in this group.'), // Removed .url() for now to fix API error. Re-evaluate if URLs must be validated here.
+  tabUrls: z.array(z.string().url()).describe('The URLs of the tabs currently in this group.'),
   isCustom: z.boolean().optional().describe('Whether this group was manually created by the user. AI should be cautious about modifying custom groups unless explicitly adding relevant ungrouped tabs.'),
 });
 
 const SuggestTabGroupsInputSchema = z.object({
-  ungroupedUrls: z.array(z.string()).describe('A list of URLs of the currently ungrouped tabs that need organization.'), // Removed .url()
+  ungroupedUrls: z.array(z.string().url()).describe('A list of URLs of the currently ungrouped tabs that need organization.'),
   existingGroups: z.array(ExistingGroupSchema).optional().describe('A list of already existing tab groups, for context and potential additions. Analyze these groups to understand their themes based on their names and current tabs.'),
 });
 export type SuggestTabGroupsInput = z.infer<typeof SuggestTabGroupsInputSchema>;
 
 const SuggestedGroupSchema = z.object({
   groupName: z.string().describe('The suggested name for the tab group. If adding to an existing group, this will be the name of that existing group.'),
-  tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'), // Removed .url()
+  tabUrls: z.array(z.string().url()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
 });
 
 const SuggestTabGroupsOutputSchema = z.array(SuggestedGroupSchema);
@@ -53,14 +53,14 @@ You will receive:
 
 Your primary goal is to decide the best placement for EACH of the \`ungroupedUrls\`.
 Your STRONG PREFERENCE should be to add ungrouped tabs to one of the \`existingGroups\` if a thematic fit exists.
-Analyze the \`groupName\` and current \`tabUrls\` of \`existingGroups\` to understand their theme.
-Be flexible: an ungrouped tab might belong to an existing group even if its title doesn't perfectly match the group's name, as long as it aligns with the group's overall topic and content.
+Analyze the \`groupName\` and, VERY IMPORTANTLY, the current \`tabUrls\` of \`existingGroups\` to accurately understand their theme. The collective content of the tabs within an existing group is a primary indicator of its actual theme, even more so than its name.
+Be flexible: an ungrouped tab might belong to an existing group even if its title doesn't perfectly match the group's name, as long as it aligns with the group's overall topic and content as evidenced by its existing tabs.
 
 Only create a NEW tab group for \`ungroupedUrls\` if:
-1. No \`existingGroup\` is a suitable thematic match.
+1. No \`existingGroup\` is a suitable thematic match, based on a thorough analysis of both its name and its current tabs.
 2. The \`ungroupedUrls\` form a distinct new theme not covered by any existing group.
 
-CRITICAL: AVOID CREATING A NEW GROUP IF AN EXISTING GROUP HAS A VERY SIMILAR NAME OR ALREADY COVERS THE SAME TOPIC/THEME. In such cases, you MUST add the relevant \`ungroupedUrls\` to that existing group instead of creating a duplicate or near-duplicate group.
+CRITICAL: AVOID CREATING A NEW GROUP IF AN EXISTING GROUP HAS A VERY SIMILAR NAME OR ALREADY COVERS THE SAME TOPIC/THEME (as determined by its name AND its current tabs). In such cases, you MUST add the relevant \`ungroupedUrls\` to that existing group instead of creating a duplicate or near-duplicate group.
 
 Output Instructions:
 - Respond with a JSON array of group objects.
@@ -73,9 +73,9 @@ Output Instructions:
 
 - If an \`existingGroup\` is NOT modified (i.e., no \`ungroupedUrls\` are added to it), DO NOT include it in your output array.
 - Prefer adding to non-custom (\`isCustom: false\`) existing groups if a thematic fit exists.
-- If adding to a CUSTOM (\`isCustom: true\`) existing group, ensure the thematic fit is very strong and the addition is clearly beneficial.
-- When considering adding to an \`existingGroup\`, analyze its \`groupName\` and current \`tabUrls\` to understand its theme or purpose. Be flexible: an ungrouped tab might belong to an existing group even if its title doesn't perfectly match the group's name, as long as it aligns with the group's overall topic and content.
-- DO NOT create a new group if an existing group with a very similar name or theme already exists. Instead, add the relevant ungrouped tabs to that existing group. This is critical for avoiding redundant groups like creating a new "Entertainment" group if one already exists.
+- If adding to a CUSTOM (\`isCustom: true\`) existing group, ensure the thematic fit (based on its existing tabs and name) is very strong and the addition is clearly beneficial.
+- When considering adding to an \`existingGroup\`, deeply analyze its \`groupName\` and, CRUCIALLY, its current \`tabUrls\` to accurately understand its theme or purpose. The collective content of these tabs defines the group's scope. Be flexible: an ungrouped tab might belong to an existing group even if its title doesn't perfectly match the group's name, as long as it aligns with the group's overall topic and content as indicated by its existing tabs.
+- DO NOT create a new group if an existing group with a very similar name or theme (judged by its name AND its current tabs) already exists. Instead, add the relevant ungrouped tabs to that existing group. This is critical for avoiding redundant groups.
 - If some \`ungroupedUrls\` cannot be reasonably grouped or added to existing groups, you can omit them from your suggestions (they will remain ungrouped).
 - If no \`ungroupedUrls\` are provided, or no actions are taken (no new groups created, no tabs added to existing groups), return an empty array.
 
