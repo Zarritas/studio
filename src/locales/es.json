@@ -1,3 +1,4 @@
+
 {
   "tabwise": "TabWise",
   "settings": "Configuración",
@@ -122,5 +123,10 @@
   "tabMoved": "Pestaña Movida",
   "tabMovedDesc": "La pestaña \"{title}\" se movió al grupo \"{groupName}\".",
   "tabMovedToUngrouped": "Pestaña Movida a No Agrupadas",
-  "tabMovedToUngroupedDesc": "La pestaña \"{title}\" ahora no está agrupada."
+  "tabMovedToUngroupedDesc": "La pestaña \"{title}\" ahora no está agrupada.",
+  "groupIsEmptyTitle": "Grupo Vacío",
+  "cannotOpenTabsFromEmptyGroup": "No se pueden abrir pestañas de un grupo vacío.",
+  "tabsOpenedTitle": "Pestañas Abiertas",
+  "allTabsOpened": "Se abrieron {count} pestaña(s) del grupo '{groupName}'.",
+  "openAllTabsInGroupTooltip": "Abrir todas las pestañas del grupo '{groupName}'"
 }

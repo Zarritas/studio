@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react'; 
@@ -6,12 +7,13 @@ import type { Tab, TabGroup as TabGroupType } from '@/types';
 import { TabItem } from './tab-item';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2, FileText, Edit2, PlusCircle } from 'lucide-react';
+import { Trash2, FileText, Edit2, PlusCircle, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTranslation } from '@/lib/i18n';
 import { EditGroupNameModal } from './edit-group-name-modal'; 
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export interface DraggedTabInfo {
   tabId: string;
@@ -39,6 +41,7 @@ export function TabGroup({
   onDropTab
 }: TabGroupProps): ReactNode {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
   const [isDragOver, setIsDragOver] = useState(false);
   
@@ -71,6 +74,24 @@ export function TabGroup({
     }
   };
 
+  const handleOpenAllTabsInGroup = () => {
+    if (group.tabs.length === 0) {
+      toast({
+        title: t('groupIsEmptyTitle', { defaultValue: 'Group is Empty' }),
+        description: t('cannotOpenTabsFromEmptyGroup', { defaultValue: 'Cannot open tabs from an empty group.' }),
+        variant: 'default'
+      });
+      return;
+    }
+    group.tabs.forEach(tab => {
+      window.open(tab.url, '_blank', 'noopener,noreferrer');
+    });
+    toast({
+      title: t('tabsOpenedTitle', { defaultValue: 'Tabs Opened' }),
+      description: t('allTabsOpened', { groupName: group.name, count: group.tabs.length })
+    });
+  };
+
   return (
     <> 
       <Card 
@@ -83,12 +104,29 @@ export function TabGroup({
         )}
       >
         <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-xl flex items-center gap-2">
+          <div className="flex justify-between items-start">
+            <CardTitle 
+              className={cn(
+                "text-xl flex items-center gap-2 flex-grow mr-2",
+                group.tabs.length > 0 && "cursor-pointer hover:text-primary transition-colors"
+              )}
+              onClick={group.tabs.length > 0 ? handleOpenAllTabsInGroup : undefined}
+              onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && group.tabs.length > 0) handleOpenAllTabsInGroup(); }}
+              role={group.tabs.length > 0 ? "button" : undefined}
+              tabIndex={group.tabs.length > 0 ? 0 : undefined}
+              title={group.tabs.length > 0 ? t('openAllTabsInGroupTooltip', {groupName: group.name, defaultValue: `Open all tabs in ${group.name}`}) : undefined}
+            >
               {group.name}
               {group.isCustom && <Badge variant="secondary">{t('custom', {defaultValue: 'Custom'})}</Badge>}
+              {group.tabs.length > 0 && <ExternalLink className="h-4 w-4 text-muted-foreground inline-block ml-1 group-hover:text-primary transition-colors" />}
             </CardTitle>
-            <Button variant="ghost" size="icon" onClick={() => setIsEditModalOpen(true)} className="h-7 w-7">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={(e) => { e.stopPropagation(); setIsEditModalOpen(true); }} 
+              className="h-7 w-7 flex-shrink-0"
+              aria-label={t('editGroupName')}
+            >
               <Edit2 className="h-4 w-4" />
               <span className="sr-only">{t('editGroupName')}</span>
             </Button>
@@ -110,7 +148,7 @@ export function TabGroup({
               </div>
             </ScrollArea>
           ) : (
-            <div className="p-4 text-center text-muted-foreground min-h-[100px] flex flex-col items-center justify-center"> {/* Ensure drop target area even if empty */}
+            <div className="p-4 text-center text-muted-foreground min-h-[100px] flex flex-col items-center justify-center">
               <p>{t('groupIsEmpty')}</p>
               <Button variant="outline" size="sm" className="mt-2" onClick={() => onAddTabToGroup(group.id)}>
                 <PlusCircle className="mr-2 h-4 w-4" /> {t('addTabToEmptyGroup')}
@@ -137,3 +175,4 @@ export function TabGroup({
     </>
   );
 }
+

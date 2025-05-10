@@ -1,3 +1,4 @@
+
 {
   "tabwise": "TabWise",
   "settings": "Settings",
@@ -122,5 +123,10 @@
   "tabMoved": "Tab Moved",
   "tabMovedDesc": "Tab \"{title}\" moved to group \"{groupName}\".",
   "tabMovedToUngrouped": "Tab Moved to Ungrouped",
-  "tabMovedToUngroupedDesc": "Tab \"{title}\" is now ungrouped."
+  "tabMovedToUngroupedDesc": "Tab \"{title}\" is now ungrouped.",
+  "groupIsEmptyTitle": "Group is Empty",
+  "cannotOpenTabsFromEmptyGroup": "Cannot open tabs from an empty group.",
+  "tabsOpenedTitle": "Tabs Opened",
+  "allTabsOpened": "Opened {count} tab(s) from group '{groupName}'.",
+  "openAllTabsInGroupTooltip": "Open all tabs in group '{groupName}'"
 }
