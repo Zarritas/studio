@@ -15,19 +15,19 @@ import {z} from 'genkit';
 
 const ExistingGroupSchema = z.object({
   groupName: z.string().describe('The name of the existing tab group.'),
-  tabUrls: z.array(z.string().url()).describe('The URLs of the tabs currently in this group.'),
+  tabUrls: z.array(z.string()).describe('The URLs of the tabs currently in this group.'),
   isCustom: z.boolean().optional().describe('Whether this group was manually created by the user. AI should be cautious about modifying custom groups unless explicitly adding relevant ungrouped tabs.'),
 });
 
 const SuggestTabGroupsInputSchema = z.object({
-  ungroupedUrls: z.array(z.string().url()).describe('A list of URLs of the currently ungrouped tabs that need organization.'),
+  ungroupedUrls: z.array(z.string()).describe('A list of URLs of the currently ungrouped tabs that need organization.'),
   existingGroups: z.array(ExistingGroupSchema).optional().describe('A list of already existing tab groups, for context and potential additions. Analyze these groups to understand their themes based on their names and current tabs.'),
 });
 export type SuggestTabGroupsInput = z.infer<typeof SuggestTabGroupsInputSchema>;
 
 const SuggestedGroupSchema = z.object({
   groupName: z.string().describe('The suggested name for the tab group. If adding to an existing group, this will be the name of that existing group.'),
-  tabUrls: z.array(z.string().url()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
+  tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
 });
 
 const SuggestTabGroupsOutputSchema = z.array(SuggestedGroupSchema);
