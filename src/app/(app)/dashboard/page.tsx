@@ -1,14 +1,13 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Tab, TabGroup as TabGroupType } from '@/types';
-import { TabGroup } from '@/components/dashboard/tab-group';
+import { TabGroup, type DraggedTabInfo } from '@/components/dashboard/tab-group';
 import { AddTabModal } from '@/components/dashboard/add-tab-modal';
 import { CreateGroupModal } from '@/components/dashboard/create-group-modal';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Zap, Lightbulb, Trash2, AlertTriangle, FolderPlus, PlusCircle, Layers3 } from 'lucide-react';
+import { Zap, Lightbulb, Trash2, AlertTriangle, FolderPlus, Layers3 } from 'lucide-react';
 import { suggestTabGroups, SuggestTabGroupsInput, SuggestTabGroupsOutput } from '@/ai/flows/suggest-tab-groups';
 import { suggestInactiveTabsClosure, SuggestInactiveTabsClosureInput, SuggestInactiveTabsClosureOutput } from '@/ai/flows/suggest-inactive-tabs-closure';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +26,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
 
 const initialTabs: Tab[] = [
   { id: '1', title: 'Next.js Docs', url: 'https://nextjs.org/docs', lastAccessed: Date.now() - 1000 * 60 * 5 },
@@ -46,6 +46,7 @@ export default function DashboardPage() {
   const [aiSuggestionError, setAiSuggestionError] = useState<string | null>(null);
   const { toast } = useToast();
   const { t } = useTranslation();
+  const [isUngroupedDragOver, setIsUngroupedDragOver] = useState(false);
 
   const ungroupedTabs = tabs.filter(tab => !tabGroups.some(group => group.tabs.some(t => t.id === tab.id)));
 
@@ -78,51 +79,39 @@ export default function DashboardPage() {
 
       const aiSuggestions = suggestedGroupsOutput.map((sg, index) => ({
           ...sg,
-          // Resolve URLs from AI output to actual Tab objects
           processedTabs: sg.tabUrls.map(url => {
-            // Prioritize finding from all tabs to get existing IDs and full data
             const existingTab = tabs.find(t => t.url === url);
             if (existingTab) return existingTab;
-            // Fallback for a URL that might be new (though AI is told to use existing ungrouped URLs)
             return { id: `ai-new-tab-${url}-${index}`, title: new URL(url).hostname, url, lastAccessed: Date.now() } as Tab;
           }).filter(Boolean) as Tab[]
       }));
       
       aiSuggestions.forEach(suggestion => {
           if (suggestion.processedTabs.length === 0 && !suggestion.groupName) return;
-
           const existingGroupIndex = nextTabGroupsState.findIndex(g => g.name === suggestion.groupName);
 
-          if (existingGroupIndex !== -1) { // Group name exists, AI wants to update it
+          if (existingGroupIndex !== -1) { 
               const groupToUpdate = nextTabGroupsState[existingGroupIndex];
               const currentTabsInGroupSet = new Set(groupToUpdate.tabs.map(t => t.id));
               let actuallyAddedNewTabs = false;
 
               suggestion.processedTabs.forEach(aiTabFromSuggestion => {
-                  // Check if this tab (from AI's suggested list for the group) is one of the initially ungrouped tabs
                   const isOriginallyUngrouped = ungroupedTabs.some(ut => ut.id === aiTabFromSuggestion.id);
-
                   if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && isOriginallyUngrouped) {
                       groupToUpdate.tabs.push(aiTabFromSuggestion);
                       currentTabsInGroupSet.add(aiTabFromSuggestion.id);
                       actuallyAddedNewTabs = true;
                   } else if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && !isOriginallyUngrouped) {
-                    // AI included a tab in an existing group that wasn't in the ungrouped list.
-                    // This means it's re-affirming an existing tab. Add it if not present.
                     groupToUpdate.tabs.push(aiTabFromSuggestion);
                     currentTabsInGroupSet.add(aiTabFromSuggestion.id);
-                    // This isn't counted as "updating with new tabs" from ungrouped for the toast.
                   }
               });
-
-              if (actuallyAddedNewTabs) {
-                  groupsUpdatedCount++;
-              }
-          } else { // New group suggested by AI
+              if (actuallyAddedNewTabs) groupsUpdatedCount++;
+          } else { 
               nextTabGroupsState.push({
                   id: `ai-group-${Date.now()}-${suggestion.groupName.replace(/\s+/g, '-')}`,
                   name: suggestion.groupName,
-                  tabs: suggestion.processedTabs.filter(t => ungroupedTabs.some(ut => ut.id === t.id)), // Only add originally ungrouped tabs
+                  tabs: suggestion.processedTabs.filter(t => ungroupedTabs.some(ut => ut.id === t.id)),
                   isCustom: false,
               });
               newGroupsCreatedCount++;
@@ -140,9 +129,6 @@ export default function DashboardPage() {
         toastMessage = t("aiGroupsUpdated", { count: groupsUpdatedCount });
       } else if (suggestedGroupsOutput.length === 0 && ungroupedTabs.length > 0) {
         toastMessage = t("noNewOrUpdatedGroups");
-      } else if (ungroupedTabs.length === 0) {
-         // This case handled earlier, but as a fallback.
-         toastMessage = t("noUngroupedTabsToOrganizeDesc");
       } else {
         toastMessage = t("noNewOrUpdatedGroups");
       }
@@ -251,21 +237,19 @@ export default function DashboardPage() {
   };
 
   const handleDeleteAllGroups = () => {
-    setTabGroups(prevGroups => prevGroups.filter(g => g.isCustom)); // Keep custom groups
+    setTabGroups(prevGroups => prevGroups.filter(g => g.isCustom));
     toast({ title: t("allAIGroupsDeleted"), description: t("allAIGroupsDeletedDesc"), variant: "destructive" });
   };
   
   const handleAddTabToGroup = (groupId: string) => {
     if (ungroupedTabs.length > 0) {
-      const tabToAdd = ungroupedTabs[0];
+      const tabToAdd = ungroupedTabs[0]; // Add the first ungrouped tab
       setTabGroups(prevGroups => 
         prevGroups.map(g => 
           g.id === groupId ? {...g, tabs: [...g.tabs, tabToAdd]} : g
         )
       );
-      // Also remove from main tabs list if it's now grouped implicitly?
-      // No, ungroupedTabs is derived. Adding to group means it's no longer ungrouped.
-      toast({title: t("tabAddedToGroup"), description: t("tabAddedToGroupDesc", { title: tabToAdd.title })});
+      toast({title: t("tabAddedToGroup"), description: t("tabAddedToGroupDesc", { title: tabToAdd.title, group: tabGroups.find(g=>g.id === groupId)?.name || '' })});
     } else {
       toast({title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
     }
@@ -279,6 +263,57 @@ export default function DashboardPage() {
     );
     toast({title: t("groupRenamed"), description: t("groupRenamedDesc", { name: newName })});
   };
+  
+  const handleDropOnGroup = (draggedTabInfo: DraggedTabInfo, targetGroupId: string) => {
+    const { tabId, sourceType, sourceGroupId } = draggedTabInfo;
+  
+    if (sourceType === 'group' && sourceGroupId === targetGroupId) return; 
+  
+    const tabToMove = tabs.find(t => t.id === tabId);
+    if (!tabToMove) return;
+  
+    setTabGroups(prevGroups => {
+      let newGroups = prevGroups.map(g => ({ ...g, tabs: [...g.tabs] }));
+  
+      // Remove from source group if it was in one
+      if (sourceType === 'group' && sourceGroupId) {
+        const srcGroup = newGroups.find(g => g.id === sourceGroupId);
+        if (srcGroup) {
+          srcGroup.tabs = srcGroup.tabs.filter(t => t.id !== tabId);
+        }
+      }
+  
+      // Add to target group
+      const tgtGroup = newGroups.find(g => g.id === targetGroupId);
+      if (tgtGroup && !tgtGroup.tabs.some(t => t.id === tabId)) {
+        tgtGroup.tabs.push(tabToMove);
+      }
+      return newGroups.filter(g => g.tabs.length > 0 || g.isCustom);
+    });
+    toast({ title: t("tabMoved"), description: t("tabMovedDesc", { title: tabToMove.title, groupName: tabGroups.find(g=>g.id === targetGroupId)?.name || 'target group'}) });
+  };
+
+  const handleDropOnUngroupedArea = (draggedTabInfo: DraggedTabInfo) => {
+    const { tabId, sourceType, sourceGroupId } = draggedTabInfo;
+  
+    if (sourceType === 'ungrouped') return; // Already ungrouped
+  
+    const tabToMove = tabs.find(t => t.id === tabId);
+    if (!tabToMove) return;
+  
+    if (sourceType === 'group' && sourceGroupId) {
+      setTabGroups(prevGroups => {
+        let newGroups = prevGroups.map(g => ({ ...g, tabs: [...g.tabs] }));
+        const srcGroup = newGroups.find(g => g.id === sourceGroupId);
+        if (srcGroup) {
+          srcGroup.tabs = srcGroup.tabs.filter(t => t.id !== tabId);
+        }
+        return newGroups.filter(g => g.tabs.length > 0 || g.isCustom);
+      });
+    }
+    toast({ title: t("tabMovedToUngrouped"), description: t("tabMovedToUngroupedDesc", { title: tabToMove.title }) });
+  };
+
 
   const hasAiGroups = tabGroups.some(g => !g.isCustom);
 
@@ -361,6 +396,7 @@ export default function DashboardPage() {
                 onExportGroup={handleExportGroup}
                 onAddTabToGroup={handleAddTabToGroup}
                 onEditGroupName={handleEditGroupName}
+                onDropTab={handleDropOnGroup}
               />
             ))}
           </div>
@@ -371,16 +407,43 @@ export default function DashboardPage() {
         <div className="mt-8">
            <Separator className="my-6" />
           <h2 className="text-2xl font-semibold mb-4">{t("ungroupedTabsCount", { count: ungroupedTabs.length })}</h2>
-           <div className="space-y-2">
+           <div 
+              onDragOver={(e) => { e.preventDefault(); setIsUngroupedDragOver(true); }}
+              onDragLeave={() => setIsUngroupedDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsUngroupedDragOver(false);
+                try {
+                  const dataString = e.dataTransfer.getData('application/json');
+                  if (dataString) {
+                    const draggedTabInfo: DraggedTabInfo = JSON.parse(dataString);
+                    if (draggedTabInfo.tabId && draggedTabInfo.sourceType !== undefined) {
+                       handleDropOnUngroupedArea(draggedTabInfo);
+                    }
+                  }
+                } catch (err) {
+                  console.error("Failed to parse dropped data on ungrouped area", err);
+                }
+              }}
+              className={cn(
+                "space-y-2 p-4 rounded-lg border border-dashed",
+                isUngroupedDragOver ? "border-primary ring-2 ring-primary bg-primary/10" : "border-muted"
+              )}
+            >
             {ungroupedTabs.map(tab => (
-              <TabItem key={tab.id} tab={tab} onRemove={(tabId) => {
-                setTabs(prevTabs => prevTabs.filter(t => t.id !== tabId));
-                setTabGroups(prevGroups => 
-                  prevGroups.map(group => ({
-                    ...group,
-                    tabs: group.tabs.filter(t => t.id !== tabId)
-                  })).filter(group => group.tabs.length > 0 || group.isCustom)
-                );
+              <TabItem 
+                key={tab.id} 
+                tab={tab}
+                sourceInfo={{ type: 'ungrouped' }}
+                onRemove={(tabId) => {
+                  setTabs(prevTabs => prevTabs.filter(t => t.id !== tabId));
+                  // Also remove from any group it might be in (though ungroupedTabs should already filter this)
+                  setTabGroups(prevGroups => 
+                    prevGroups.map(group => ({
+                      ...group,
+                      tabs: group.tabs.filter(t => t.id !== tabId)
+                    })).filter(group => group.tabs.length > 0 || group.isCustom)
+                  );
               }} />
             ))}
           </div>

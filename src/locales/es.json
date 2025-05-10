@@ -1,4 +1,3 @@
-
 {
   "tabwise": "TabWise",
   "settings": "Configuración",
@@ -86,7 +85,7 @@
   "allAIGroupsDeleted": "Todos los Grupos de IA Eliminados",
   "allAIGroupsDeletedDesc": "Todos los grupos de pestañas sugeridos por IA han sido eliminados.",
   "tabAddedToGroup": "Pestaña añadida al grupo",
-  "tabAddedToGroupDesc": "Pestaña \"{title}\" añadida al grupo.",
+  "tabAddedToGroupDesc": "Pestaña \"{title}\" añadida al grupo \"{groupName}\".",
   "noUngroupedTabs": "No hay pestañas sin agrupar",
   "noUngroupedTabsDesc": "Añade nuevas pestañas o desagrupa las existentes para añadirlas a este grupo.",
   "groupRenamed": "Grupo Renombrado",
@@ -119,6 +118,9 @@
   "editGroupModalDescription": "Introduce el nuevo nombre para este grupo.",
   "saveNameButton": "Guardar Nombre",
   "groupNameCannotBeEmptyTitle": "Nombre de Grupo Inválido",
-  "groupNameCannotBeEmptyDesc": "El nombre del grupo no puede estar vacío. Por favor, introduce un nombre válido."
+  "groupNameCannotBeEmptyDesc": "El nombre del grupo no puede estar vacío. Por favor, introduce un nombre válido.",
+  "tabMoved": "Pestaña Movida",
+  "tabMovedDesc": "La pestaña \"{title}\" se movió al grupo \"{groupName}\".",
+  "tabMovedToUngrouped": "Pestaña Movida a No Agrupadas",
+  "tabMovedToUngroupedDesc": "La pestaña \"{title}\" ahora no está agrupada."
 }
-

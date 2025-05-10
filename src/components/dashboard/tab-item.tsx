@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Tab } from '@/types';
@@ -12,19 +11,35 @@ import { useTranslation } from '@/lib/i18n';
 interface TabItemProps {
   tab: Tab;
   onRemove?: (tabId: string) => void;
-  isDraggable?: boolean;
+  sourceInfo: { type: 'group'; groupId: string } | { type: 'ungrouped' }; // Identifies if tab is from a group or ungrouped
 }
 
-export function TabItem({ tab, onRemove, isDraggable = false }: TabItemProps) {
+export function TabItem({ tab, onRemove, sourceInfo }: TabItemProps) {
   const { t } = useTranslation();
   const defaultFavicon = `https://www.google.com/s2/favicons?domain=${new URL(tab.url).hostname}&sz=32`;
+
+  const handleDragStart = (event: React.DragEvent<HTMLDivElement>) => {
+    event.dataTransfer.setData('application/json', JSON.stringify({
+      tabId: tab.id,
+      sourceType: sourceInfo.type,
+      sourceGroupId: sourceInfo.type === 'group' ? sourceInfo.groupId : null,
+    }));
+    event.currentTarget.style.opacity = '0.4';
+  };
+
+  const handleDragEnd = (event: React.DragEvent<HTMLDivElement>) => {
+    event.currentTarget.style.opacity = '1';
+  };
   
   return (
-    <Card className={cn(
-        "flex items-center p-3 gap-3 transition-all hover:shadow-md",
-        isDraggable && "cursor-grab"
+    <Card 
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      className={cn(
+        "flex items-center p-3 gap-3 transition-all hover:shadow-md cursor-grab"
       )}>
-      {isDraggable && <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
+      <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
       <Image
         src={tab.faviconUrl || defaultFavicon}
         alt={`${tab.title} favicon`}

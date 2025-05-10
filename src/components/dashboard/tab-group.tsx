@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react'; 
@@ -12,6 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTranslation } from '@/lib/i18n';
 import { EditGroupNameModal } from './edit-group-name-modal'; 
+import { cn } from '@/lib/utils';
+
+export interface DraggedTabInfo {
+  tabId: string;
+  sourceType: 'group' | 'ungrouped';
+  sourceGroupId: string | null;
+}
 
 interface TabGroupProps {
   group: TabGroupType;
@@ -20,6 +26,7 @@ interface TabGroupProps {
   onExportGroup: (group: TabGroupType) => void;
   onAddTabToGroup: (groupId: string) => void; 
   onEditGroupName: (groupId: string, newName: string) => void;
+  onDropTab: (draggedTabInfo: DraggedTabInfo, targetGroupId: string) => void;
 }
 
 export function TabGroup({ 
@@ -28,18 +35,53 @@ export function TabGroup({
   onRemoveGroup, 
   onExportGroup,
   onAddTabToGroup,
-  onEditGroupName 
+  onEditGroupName,
+  onDropTab
 }: TabGroupProps): ReactNode {
   const { t } = useTranslation();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
+  const [isDragOver, setIsDragOver] = useState(false);
   
   const handleSaveGroupName = (newName: string) => {
     onEditGroupName(group.id, newName);
   };
 
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault(); 
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    try {
+      const dataString = event.dataTransfer.getData('application/json');
+      if (dataString) {
+        const draggedTabInfo: DraggedTabInfo = JSON.parse(dataString);
+        if (draggedTabInfo.tabId && draggedTabInfo.sourceType !== undefined) {
+          onDropTab(draggedTabInfo, group.id);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse dragged data in TabGroup", e);
+    }
+  };
+
   return (
     <> 
-      <Card className="flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
+      <Card 
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={cn(
+          "flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-300",
+          isDragOver && "ring-2 ring-primary ring-offset-2 bg-primary/10"
+        )}
+      >
         <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
             <CardTitle className="text-xl flex items-center gap-2">
@@ -61,13 +103,14 @@ export function TabGroup({
                   <TabItem 
                     key={tab.id} 
                     tab={tab} 
+                    sourceInfo={{ type: 'group', groupId: group.id }}
                     onRemove={() => onRemoveTab(group.id, tab.id)} 
                   />
                 ))}
               </div>
             </ScrollArea>
           ) : (
-            <div className="p-4 text-center text-muted-foreground">
+            <div className="p-4 text-center text-muted-foreground min-h-[100px] flex flex-col items-center justify-center"> {/* Ensure drop target area even if empty */}
               <p>{t('groupIsEmpty')}</p>
               <Button variant="outline" size="sm" className="mt-2" onClick={() => onAddTabToGroup(group.id)}>
                 <PlusCircle className="mr-2 h-4 w-4" /> {t('addTabToEmptyGroup')}
@@ -94,4 +137,3 @@ export function TabGroup({
     </>
   );
 }
-
