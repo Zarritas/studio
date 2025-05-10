@@ -2,9 +2,9 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for suggesting tab groups based on the content of open tabs.
+ * @fileOverview This file defines a Genkit flow for suggesting tab groups.
+ * It considers ungrouped tabs and existing tab groups to provide organizational suggestions.
  *
- * The flow takes a list of tab URLs as input and returns a list of suggested tab groups.
  * - suggestTabGroups - A function that handles the tab group suggestion process.
  * - SuggestTabGroupsInput - The input type for the suggestTabGroups function.
  * - SuggestTabGroupsOutput - The return type for the suggestTabGroups function.
@@ -13,34 +13,82 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const ExistingGroupSchema = z.object({
+  groupName: z.string().describe('The name of the existing tab group.'),
+  tabUrls: z.array(z.string().url()).describe('The URLs of the tabs currently in this group.'),
+  isCustom: z.boolean().optional().describe('Whether this group was manually created by the user. AI should be cautious about modifying custom groups unless explicitly adding relevant ungrouped tabs.'),
+});
+
 const SuggestTabGroupsInputSchema = z.object({
-  urls: z.array(z.string().url()).describe('A list of URLs of the open tabs.'),
+  ungroupedUrls: z.array(z.string().url()).describe('A list of URLs of the currently ungrouped tabs that need organization.'),
+  existingGroups: z.array(ExistingGroupSchema).optional().describe('A list of already existing tab groups, for context and potential additions.'),
 });
 export type SuggestTabGroupsInput = z.infer<typeof SuggestTabGroupsInputSchema>;
 
-const SuggestTabGroupsOutputSchema = z.array(
-  z.object({
-    groupName: z.string().describe('The suggested name for the tab group.'),
-    tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in the group.'), // Removed .url() here
-  })
-);
+const SuggestedGroupSchema = z.object({
+  groupName: z.string().describe('The suggested name for the tab group. If adding to an existing group, this will be the name of that existing group.'),
+  tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
+});
+
+const SuggestTabGroupsOutputSchema = z.array(SuggestedGroupSchema);
 export type SuggestTabGroupsOutput = z.infer<typeof SuggestTabGroupsOutputSchema>;
 
 export async function suggestTabGroups(input: SuggestTabGroupsInput): Promise<SuggestTabGroupsOutput> {
-  return suggestTabGroupsFlow(input);
+  // Filter out empty existingGroups before sending to AI to reduce token usage and noise
+  const filteredInput = {
+    ...input,
+    existingGroups: input.existingGroups?.filter(g => g.tabUrls.length > 0),
+  };
+  return suggestTabGroupsFlow(filteredInput);
 }
 
 const prompt = ai.definePrompt({
   name: 'suggestTabGroupsPrompt',
   input: {schema: SuggestTabGroupsInputSchema},
   output: {schema: SuggestTabGroupsOutputSchema},
-  prompt: `You are a tab grouping assistant. Given a list of URLs, suggest relevant tab groups based on the content of the tabs.
+  prompt: `You are a tab grouping assistant. Your primary task is to organize the provided UNGROUPED TABS.
+You will receive:
+1. \`ungroupedUrls\`: A list of URLs for tabs that are currently not in any group.
+2. \`existingGroups\` (optional): A list of tab groups that already exist, with their names, current tabs, and whether they are custom groups.
 
-URLs:
-{{#each urls}}- {{{this}}}
+Your goal is to decide the best placement for EACH of the \`ungroupedUrls\`. You can:
+A) Create NEW tab groups for some/all of the \`ungroupedUrls\`.
+B) Add some/all of the \`ungroupedUrls\` to one of the \`existingGroups\`.
+
+Output Instructions:
+- Respond with a JSON array of group objects.
+- Each object in the array represents EITHER a NEWLY CREATED group OR an EXISTING group that has had UNGROUPED tabs ADDED to it.
+- Each group object MUST have:
+    - \`groupName\`: For a NEW group, this is the name you suggest. For an EXISTING group you're adding to, this is the EXACT name of that existing group.
+    - \`tabUrls\`:
+        - For a NEW group, this array contains ONLY the \`ungroupedUrls\` you've assigned to this new group.
+        - For an EXISTING group you're adding to, this array MUST contain ALL its ORIGINAL tabs PLUS the \`ungroupedUrls\` you've added to it. Do NOT omit original tabs.
+
+- If an \`existingGroup\` is NOT modified (i.e., no \`ungroupedUrls\` are added to it), DO NOT include it in your output array.
+- Prefer adding to non-custom (\`isCustom: false\`) existing groups if a thematic fit exists.
+- If adding to a CUSTOM (\`isCustom: true\`) existing group, ensure the thematic fit is very strong.
+- If some \`ungroupedUrls\` cannot be reasonably grouped or added to existing groups, you can omit them from your suggestions (they will remain ungrouped).
+- If no \`ungroupedUrls\` are provided, or no actions are taken (no new groups created, no tabs added to existing groups), return an empty array.
+
+Ungrouped URLs to organize:
+{{#if ungroupedUrls.length}}
+{{#each ungroupedUrls}}- {{{this}}}
 {{/each}}
+{{else}}
+- No ungrouped URLs to organize.
+{{/if}}
 
-Respond with a JSON array of objects, where each object has a groupName and a tabUrls field. The tabUrls field should be an array of URLs that belong to the group.
+Existing Tab Groups (for context and potential additions):
+{{#if existingGroups.length}}
+{{#each existingGroups}}
+- Group Name: {{{groupName}}}{{#if isCustom}} (Custom Group){{/if}}
+  Tabs:
+  {{#each tabUrls}}  - {{{this}}}
+  {{/each}}
+{{/each}}
+{{else}}
+- No existing groups provided.
+{{/if}}
 `,
 });
 
@@ -51,6 +99,9 @@ const suggestTabGroupsFlow = ai.defineFlow(
     outputSchema: SuggestTabGroupsOutputSchema,
   },
   async input => {
+    if (!input.ungroupedUrls || input.ungroupedUrls.length === 0) {
+      return []; // No ungrouped tabs to process
+    }
     const {output} = await prompt(input);
     return output!;
   }

@@ -52,26 +52,102 @@ export default function DashboardPage() {
   const handleSuggestTabGroups = async () => {
     setIsLoadingAI(true);
     setAiSuggestionError(null);
-    const currentTabUrls = tabs.map(t => t.url);
-    if (currentTabUrls.length === 0) {
-      toast({ title: t("noTabsToGroup"), description: t("noTabsToGroupDesc"), variant: "destructive" });
+
+    if (ungroupedTabs.length === 0) {
+      toast({ title: t("noUngroupedTabsToOrganize"), description: t("noUngroupedTabsToOrganizeDesc"), variant: "default" });
       setIsLoadingAI(false);
       return;
     }
 
+    const existingGroupsForAI = tabGroups.map(group => ({
+      groupName: group.name,
+      tabUrls: group.tabs.map(t => t.url),
+      isCustom: group.isCustom || false,
+    }));
+
     try {
-      const input: SuggestTabGroupsInput = { urls: currentTabUrls };
+      const input: SuggestTabGroupsInput = { 
+        ungroupedUrls: ungroupedTabs.map(t => t.url),
+        existingGroups: existingGroupsForAI,
+      };
       const suggestedGroupsOutput: SuggestTabGroupsOutput = await suggestTabGroups(input);
       
-      const newGroups: TabGroupType[] = suggestedGroupsOutput.map((sg, index) => ({
-        id: `ai-group-${Date.now()}-${index}`,
-        name: sg.groupName,
-        tabs: sg.tabUrls.map(url => tabs.find(t => t.url === url)).filter(Boolean) as Tab[],
-        isCustom: false,
+      const nextTabGroupsState = [...tabGroups];
+      let newGroupsCreatedCount = 0;
+      let groupsUpdatedCount = 0;
+
+      const aiSuggestions = suggestedGroupsOutput.map((sg, index) => ({
+          ...sg,
+          // Resolve URLs from AI output to actual Tab objects
+          processedTabs: sg.tabUrls.map(url => {
+            // Prioritize finding from all tabs to get existing IDs and full data
+            const existingTab = tabs.find(t => t.url === url);
+            if (existingTab) return existingTab;
+            // Fallback for a URL that might be new (though AI is told to use existing ungrouped URLs)
+            return { id: `ai-new-tab-${url}-${index}`, title: new URL(url).hostname, url, lastAccessed: Date.now() } as Tab;
+          }).filter(Boolean) as Tab[]
       }));
       
-      setTabGroups(prevGroups => [...prevGroups.filter(g => g.isCustom), ...newGroups]);
-      toast({ title: t("aiGroupSuggestionsApplied"), description: t("aiGroupSuggestionsAppliedDesc", { count: newGroups.length }) });
+      aiSuggestions.forEach(suggestion => {
+          if (suggestion.processedTabs.length === 0 && !suggestion.groupName) return;
+
+          const existingGroupIndex = nextTabGroupsState.findIndex(g => g.name === suggestion.groupName);
+
+          if (existingGroupIndex !== -1) { // Group name exists, AI wants to update it
+              const groupToUpdate = nextTabGroupsState[existingGroupIndex];
+              const currentTabsInGroupSet = new Set(groupToUpdate.tabs.map(t => t.id));
+              let actuallyAddedNewTabs = false;
+
+              suggestion.processedTabs.forEach(aiTabFromSuggestion => {
+                  // Check if this tab (from AI's suggested list for the group) is one of the initially ungrouped tabs
+                  const isOriginallyUngrouped = ungroupedTabs.some(ut => ut.id === aiTabFromSuggestion.id);
+
+                  if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && isOriginallyUngrouped) {
+                      groupToUpdate.tabs.push(aiTabFromSuggestion);
+                      currentTabsInGroupSet.add(aiTabFromSuggestion.id);
+                      actuallyAddedNewTabs = true;
+                  } else if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && !isOriginallyUngrouped) {
+                    // AI included a tab in an existing group that wasn't in the ungrouped list.
+                    // This means it's re-affirming an existing tab. Add it if not present.
+                    groupToUpdate.tabs.push(aiTabFromSuggestion);
+                    currentTabsInGroupSet.add(aiTabFromSuggestion.id);
+                    // This isn't counted as "updating with new tabs" from ungrouped for the toast.
+                  }
+              });
+
+              if (actuallyAddedNewTabs) {
+                  groupsUpdatedCount++;
+              }
+          } else { // New group suggested by AI
+              nextTabGroupsState.push({
+                  id: `ai-group-${Date.now()}-${suggestion.groupName.replace(/\s+/g, '-')}`,
+                  name: suggestion.groupName,
+                  tabs: suggestion.processedTabs.filter(t => ungroupedTabs.some(ut => ut.id === t.id)), // Only add originally ungrouped tabs
+                  isCustom: false,
+              });
+              newGroupsCreatedCount++;
+          }
+      });
+      
+      setTabGroups(nextTabGroupsState.filter(g => g.tabs.length > 0 || g.isCustom));
+      
+      let toastMessage = "";
+      if (newGroupsCreatedCount > 0 && groupsUpdatedCount > 0) {
+        toastMessage = t("aiGroupsCreatedAndUpdated", { created: newGroupsCreatedCount, updated: groupsUpdatedCount });
+      } else if (newGroupsCreatedCount > 0) {
+        toastMessage = t("aiGroupSuggestionsAppliedDesc", { count: newGroupsCreatedCount });
+      } else if (groupsUpdatedCount > 0) {
+        toastMessage = t("aiGroupsUpdated", { count: groupsUpdatedCount });
+      } else if (suggestedGroupsOutput.length === 0 && ungroupedTabs.length > 0) {
+        toastMessage = t("noNewOrUpdatedGroups");
+      } else if (ungroupedTabs.length === 0) {
+         // This case handled earlier, but as a fallback.
+         toastMessage = t("noUngroupedTabsToOrganizeDesc");
+      } else {
+        toastMessage = t("noNewOrUpdatedGroups");
+      }
+      toast({ title: t("aiSuggestionsProcessed"), description: toastMessage });
+
     } catch (error) {
       console.error("Error suggesting tab groups:", error);
       setAiSuggestionError(t("aiSuggestionErrorDescription"));
@@ -175,8 +251,8 @@ export default function DashboardPage() {
   };
 
   const handleDeleteAllGroups = () => {
-    setTabGroups([]);
-    toast({ title: t("allGroupsDeleted"), description: t("allGroupsDeletedDesc"), variant: "destructive" });
+    setTabGroups(prevGroups => prevGroups.filter(g => g.isCustom)); // Keep custom groups
+    toast({ title: t("allAIGroupsDeleted"), description: t("allAIGroupsDeletedDesc"), variant: "destructive" });
   };
   
   const handleAddTabToGroup = (groupId: string) => {
@@ -187,6 +263,8 @@ export default function DashboardPage() {
           g.id === groupId ? {...g, tabs: [...g.tabs, tabToAdd]} : g
         )
       );
+      // Also remove from main tabs list if it's now grouped implicitly?
+      // No, ungroupedTabs is derived. Adding to group means it's no longer ungrouped.
       toast({title: t("tabAddedToGroup"), description: t("tabAddedToGroupDesc", { title: tabToAdd.title })});
     } else {
       toast({title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
@@ -201,6 +279,8 @@ export default function DashboardPage() {
     );
     toast({title: t("groupRenamed"), description: t("groupRenamedDesc", { name: newName })});
   };
+
+  const hasAiGroups = tabGroups.some(g => !g.isCustom);
 
   return (
     <div className="space-y-6">
@@ -219,24 +299,24 @@ export default function DashboardPage() {
         <Button onClick={handleSuggestInactiveTabs} disabled={isLoadingAI}>
           <Lightbulb className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiAnalyzing') : t('aiSuggestCloseTabs')}
         </Button>
-        {tabGroups.length > 0 && (
+        {hasAiGroups && (
            <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" disabled={isLoadingAI}>
-                <Trash2 className="mr-2 h-4 w-4" /> {t("deleteAllGroups")}
+                <Trash2 className="mr-2 h-4 w-4" /> {t("deleteAllAIGroups")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>{t("areYouSure")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {t("deleteAllGroupsConfirmation")}
+                  {t("deleteAllAIGroupsConfirmation")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDeleteAllGroups} className={buttonVariants({ variant: "destructive" })}>
-                  {t("yesDeleteAll")}
+                  {t("yesDeleteAllAIGroups")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -293,7 +373,15 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-semibold mb-4">{t("ungroupedTabsCount", { count: ungroupedTabs.length })}</h2>
            <div className="space-y-2">
             {ungroupedTabs.map(tab => (
-              <TabItem key={tab.id} tab={tab} onRemove={(tabId) => setTabs(tabs.filter(t => t.id !== tabId))} />
+              <TabItem key={tab.id} tab={tab} onRemove={(tabId) => {
+                setTabs(prevTabs => prevTabs.filter(t => t.id !== tabId));
+                setTabGroups(prevGroups => 
+                  prevGroups.map(group => ({
+                    ...group,
+                    tabs: group.tabs.filter(t => t.id !== tabId)
+                  })).filter(group => group.tabs.length > 0 || group.isCustom)
+                );
+              }} />
             ))}
           </div>
         </div>
@@ -308,7 +396,7 @@ export default function DashboardPage() {
           </p>
           <div className="mt-6 flex justify-center gap-2">
              <AddTabModal onAddTab={handleAddTab} />
-             <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI}>
+             <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI || ungroupedTabs.length === 0}>
                 <Zap className="mr-2 h-4 w-4" /> {t('aiSuggestGroups')}
             </Button>
           </div>
@@ -317,4 +405,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
