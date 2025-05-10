@@ -27,7 +27,7 @@ export type SuggestTabGroupsInput = z.infer<typeof SuggestTabGroupsInputSchema>;
 
 const SuggestedGroupSchema = z.object({
   groupName: z.string().describe('The suggested name for the tab group. If adding to an existing group, this will be the name of that existing group.'),
-  tabUrls: z.array(z.string().url()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
+  tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
 });
 
 const SuggestTabGroupsOutputSchema = z.array(SuggestedGroupSchema);
