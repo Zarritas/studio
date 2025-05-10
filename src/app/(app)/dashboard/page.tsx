@@ -8,7 +8,7 @@ import { AddTabModal } from '@/components/dashboard/add-tab-modal';
 import { CreateGroupModal } from '@/components/dashboard/create-group-modal';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Zap, Lightbulb, Trash2, AlertTriangle, FolderPlus, Layers3 } from 'lucide-react';
+import { Zap, Lightbulb, Trash2, AlertTriangle, Layers3 } from 'lucide-react';
 import { suggestTabGroups, SuggestTabGroupsInput, SuggestTabGroupsOutput } from '@/ai/flows/suggest-tab-groups';
 import { suggestInactiveTabsClosure, SuggestInactiveTabsClosureInput, SuggestInactiveTabsClosureOutput } from '@/ai/flows/suggest-inactive-tabs-closure';
 import { useToast } from '@/hooks/use-toast';
@@ -35,18 +35,34 @@ const initialTabs: Tab[] = [
   { id: '2', title: 'Tailwind CSS', url: 'https://tailwindcss.com/docs/installation', lastAccessed: Date.now() - 1000 * 60 * 10 },
   { id: '3', title: 'ShadCN UI', url: 'https://ui.shadcn.com/docs', lastAccessed: Date.now() - 1000 * 60 * 2 },
   { id: '4', title: 'React Docs', url: 'https://react.dev/', lastAccessed: Date.now() - 1000 * 60 * 60 * 2 },
-  { id: '5', title: 'GitHub', url: 'https://github.com', lastAccessed: Date.now() - 1000 * 60 * 30 },
-  { id: '6', title: 'Google News', url: 'https://news.google.com', lastAccessed: Date.now() - 1000 * 60 * 60 * 24 },
-  { id: '7', title: 'MDN Web Docs', url: 'https://developer.mozilla.org', lastAccessed: Date.now() - 1000 * 60 * 15 },
-  { id: '8', title: 'Stack Overflow', url: 'https://stackoverflow.com', lastAccessed: Date.now() - 1000 * 60 * 45 },
-  { id: '9', title: 'YouTube', url: 'https://www.youtube.com', lastAccessed: Date.now() - 1000 * 60 * 20 },
-  { id: '10', title: 'Twitter / X', url: 'https://x.com', lastAccessed: Date.now() - 1000 * 60 * 50 },
-  { id: '11', title: 'Figma Community', url: 'https://www.figma.com/community', lastAccessed: Date.now() - 1000 * 60 * 60 * 3 },
-  { id: '12', title: 'Google Drive', url: 'https://drive.google.com', lastAccessed: Date.now() - 1000 * 60 * 120 },
-  { id: '13', title: 'Notion', url: 'https://www.notion.so', lastAccessed: Date.now() - 1000 * 60 * 90 },
-  { id: '14', title: 'BBC News', url: 'https://www.bbc.com/news', lastAccessed: Date.now() - 1000 * 60 * 60 * 5 },
-  { id: '15', title: 'Wikipedia', url: 'https://www.wikipedia.org', lastAccessed: Date.now() - 1000 * 60 * 25 },
+  { id: '5', title: 'GitHub - My Project', url: 'https://github.com/my-username/my-repo', lastAccessed: Date.now() - 1000 * 60 * 30 },
+  { id: '6', title: 'Google News - Tech', url: 'https://news.google.com/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US%3Aen', lastAccessed: Date.now() - 1000 * 60 * 60 * 24 },
+  { id: '7', title: 'MDN Web Docs - JavaScript', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript', lastAccessed: Date.now() - 1000 * 60 * 15 },
+  { id: '8', title: 'Stack Overflow - React Hooks Question', url: 'https://stackoverflow.com/questions/tagged/react-hooks', lastAccessed: Date.now() - 1000 * 60 * 45 },
+  { id: '9', title: 'YouTube - Coding Tutorial', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', lastAccessed: Date.now() - 1000 * 60 * 20 }, 
+  { id: '10', title: 'Twitter / X - Tech News Feed', url: 'https://x.com/elonmusk', lastAccessed: Date.now() - 1000 * 60 * 50 },
+  { id: '11', title: 'Figma Community - UI Kits', url: 'https://www.figma.com/community/category/ui_kits', lastAccessed: Date.now() - 1000 * 60 * 60 * 3 },
+  { id: '12', title: 'Google Drive - Project Files', url: 'https://drive.google.com/drive/my-drive', lastAccessed: Date.now() - 1000 * 60 * 120 },
+  { id: '13', title: 'Notion - Meeting Notes', url: 'https://www.notion.so/meeting-notes-xyz', lastAccessed: Date.now() - 1000 * 60 * 90 },
+  { id: '14', title: 'Spotify - Lo-fi Beats', url: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M', lastAccessed: Date.now() - 1000 * 60 * 60 * 5 },
+  { id: '15', title: 'Wikipedia - AI History', url: 'https://en.wikipedia.org/wiki/History_of_artificial_intelligence', lastAccessed: Date.now() - 1000 * 60 * 25 },
+  { id: '16', title: 'Reddit - r/programming', url: 'https://www.reddit.com/r/programming/', lastAccessed: Date.now() - 1000 * 60 * 35 },
+  { id: '17', title: 'AWS Console - S3 Buckets', url: 'https://s3.console.aws.amazon.com/s3/home', lastAccessed: Date.now() - 1000 * 60 * 60 * 4 },
+  { id: '18', title: 'Netflix - New Series', url: 'https://www.netflix.com/browse', lastAccessed: Date.now() - 1000 * 60 * 180 },
+  { id: '19', title: 'LinkedIn - My Network', url: 'https://www.linkedin.com/mynetwork/', lastAccessed: Date.now() - 1000 * 60 * 55 },
+  { id: '20', title: 'Duolingo - Spanish Lesson', url: 'https://www.duolingo.com/learn', lastAccessed: Date.now() - 1000 * 60 * 5 },
+  { id: '21', title: 'Coursera - Machine Learning Course', url: 'https://www.coursera.org/learn/machine-learning', lastAccessed: Date.now() - 1000 * 60 * 60 * 48 },
+  { id: '22', title: 'Amazon - Shopping Cart', url: 'https://www.amazon.com/gp/cart/view.html', lastAccessed: Date.now() - 1000 * 60 * 10 },
+  { id: '23', title: 'Medium - Tech Article', url: 'https://medium.com/topic/technology', lastAccessed: Date.now() - 1000 * 60 * 60 },
+  { id: '24', title: 'The Verge - Gadget Reviews', url: 'https://www.theverge.com/reviews', lastAccessed: Date.now() - 1000 * 60 * 120 },
+  { id: '25', title: 'Khan Academy - Math Practice', url: 'https://www.khanacademy.org/math', lastAccessed: Date.now() - 1000 * 60 * 300 },
+  { id: '26', title: 'Pinterest - Home Decor Ideas', url: 'https://www.pinterest.com/ideas/home-decor/914173009174/', lastAccessed: Date.now() - 1000 * 60 * 40 },
+  { id: '27', title: 'ESPN - Sports News', url: 'https://www.espn.com/', lastAccessed: Date.now() - 1000 * 60 * 70 },
+  { id: '28', title: 'AllRecipes - Dinner Ideas', url: 'https://www.allrecipes.com/', lastAccessed: Date.now() - 1000 * 60 * 150 },
+  { id: '29', title: 'Dev.to - Blog Post', url: 'https://dev.to/', lastAccessed: Date.now() - 1000 * 60 * 60 * 6 },
+  { id: '30', title: 'Adobe Color - Color Palette Generator', url: 'https://color.adobe.com/create/color-wheel', lastAccessed: Date.now() - 1000 * 60 * 80 },
 ];
+
 
 export default function DashboardPage() {
   const [tabs, setTabs] = useState<Tab[]>(initialTabs);
@@ -54,7 +70,7 @@ export default function DashboardPage() {
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [aiSuggestionError, setAiSuggestionError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [isUngroupedDragOver, setIsUngroupedDragOver] = useState(false);
 
   const ungroupedTabs = tabs.filter(tab => !tabGroups.some(group => group.tabs.some(t => t.id === tab.id)));
@@ -79,6 +95,7 @@ export default function DashboardPage() {
       const input: SuggestTabGroupsInput = { 
         ungroupedUrls: ungroupedTabs.map(t => t.url),
         existingGroups: existingGroupsForAI,
+        targetLanguage: locale, 
       };
       const suggestedGroupsOutput: SuggestTabGroupsOutput = await suggestTabGroups(input);
       
@@ -91,7 +108,6 @@ export default function DashboardPage() {
           processedTabs: sg.tabUrls.map(url => {
             const existingTab = tabs.find(t => t.url === url);
             if (existingTab) return existingTab;
-            // This case should ideally not happen if AI only uses provided URLs, but as a fallback:
             return { id: `ai-new-tab-${url}-${index}`, title: new URL(url).hostname, url, lastAccessed: Date.now() } as Tab;
           }).filter(Boolean) as Tab[]
       }));
@@ -107,24 +123,21 @@ export default function DashboardPage() {
 
               suggestion.processedTabs.forEach(aiTabFromSuggestion => {
                   const isOriginallyUngrouped = ungroupedTabs.some(ut => ut.id === aiTabFromSuggestion.id);
+                  // Only add if it's an originally ungrouped tab AND not already in this group
                   if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && isOriginallyUngrouped) {
                       groupToUpdate.tabs.push(aiTabFromSuggestion);
-                      currentTabsInGroupSet.add(aiTabFromSuggestion.id);
+                      currentTabsInGroupSet.add(aiTabFromSuggestion.id); // Keep track of added tabs for this iteration
                       actuallyAddedNewTabsToThisGroup = true;
-                  } else if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && !isOriginallyUngrouped) {
-                    // This tab was part of the original group, ensure it stays if AI returned it
-                    // Or if it's a new tab AI hallucinated (which it shouldn't)
-                    // No specific action needed here if it's already in groupToUpdate.tabs from the spread,
-                    // but we ensure it's correctly processed (e.g. if AI suggests a new tab that was part of its input)
                   }
               });
               if (actuallyAddedNewTabsToThisGroup) groupsUpdatedCount++;
           } else { 
+              // Create new group only with tabs that were originally ungrouped
               const newGroupTabs = suggestion.processedTabs.filter(t => ungroupedTabs.some(ut => ut.id === t.id));
-              if (newGroupTabs.length > 0) { // Only create a new group if it has ungrouped tabs to add
+              if (newGroupTabs.length > 0) { 
                 nextTabGroupsState.push({
                     id: `ai-group-${Date.now()}-${suggestion.groupName.replace(/\s+/g, '-')}`,
-                    name: suggestion.groupName,
+                    name: suggestion.groupName, 
                     tabs: newGroupTabs,
                     isCustom: false,
                 });
@@ -145,7 +158,9 @@ export default function DashboardPage() {
       } else if (suggestedGroupsOutput.length === 0 && ungroupedTabs.length > 0) {
         toastMessage = t("noNewOrUpdatedGroups");
       } else {
-        toastMessage = t("noNewOrUpdatedGroups"); // Default for no changes or if AI output was empty
+        // This case might occur if AI returns suggestions that don't result in actual changes
+        // e.g., suggests putting already grouped tabs into their same group.
+        toastMessage = t("noNewOrUpdatedGroups"); 
       }
       toast({ title: t("aiSuggestionsProcessed"), description: toastMessage });
 
@@ -230,7 +245,7 @@ export default function DashboardPage() {
         group.id === groupId
           ? { ...group, tabs: group.tabs.filter(tab => tab.id !== tabId) }
           : group
-      )
+      ).filter(g => g.tabs.length > 0 || g.isCustom) 
     );
   };
 
@@ -252,33 +267,39 @@ export default function DashboardPage() {
   };
 
   const handleDeleteAllGroups = () => {
-    setTabGroups(prevGroups => prevGroups.filter(g => g.isCustom)); // Keep only custom groups
+    setTabGroups(prevGroups => prevGroups.filter(g => g.isCustom)); 
     toast({ title: t("allAIGroupsDeleted"), description: t("allAIGroupsDeletedDesc"), variant: "destructive" });
   };
   
-  const handleAddTabToGroup = (groupId: string) => {
-    // This function might be better suited for a modal or specific UI to select which tab to add
-    // For now, let's assume it's contextually clear or a placeholder.
-    // If we want to add the *first* ungrouped tab:
-    if (ungroupedTabs.length > 0) {
-      const tabToAdd = ungroupedTabs[0]; 
-      setTabGroups(prevGroups => 
-        prevGroups.map(g => 
-          g.id === groupId ? {...g, tabs: [...g.tabs, tabToAdd]} : g
-        )
-      );
-      // The tab is no longer "ungrouped" in the sense of being directly in the `tabs` state but not in any group.
-      // However, the `ungroupedTabs` computed value will update automatically.
-      toast({title: t("tabAddedToGroup"), description: t("tabAddedToGroupDesc", { title: tabToAdd.title, group: tabGroups.find(g=>g.id === groupId)?.name || '' })});
-    } else {
-      toast({title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
-    }
+  const handleAddTabToGroup = (groupId: string, tabId: string) => {
+    const tabToAdd = tabs.find(t => t.id === tabId);
+    if (!tabToAdd) return;
+
+    let updatedGroups = tabGroups.map(g => {
+      if (g.tabs.some(t => t.id === tabId)) {
+        return { ...g, tabs: g.tabs.filter(t => t.id !== tabId) };
+      }
+      return g;
+    });
+    
+    updatedGroups = updatedGroups.map(g => {
+      if (g.id === groupId) {
+        if (!g.tabs.some(t => t.id === tabId)) {
+          return { ...g, tabs: [...g.tabs, tabToAdd] };
+        }
+      }
+      return g;
+    });
+
+    setTabGroups(updatedGroups.filter(g => g.tabs.length > 0 || g.isCustom));
+    toast({title: t("tabAddedToGroup"), description: t("tabAddedToGroupDesc", { title: tabToAdd.title, groupName: tabGroups.find(g=>g.id === groupId)?.name || '' })});
   };
+
 
   const handleEditGroupName = (groupId: string, newName: string) => {
     setTabGroups(prevGroups => 
       prevGroups.map(g => 
-        g.id === groupId ? {...g, name: newName, isCustom: true } : g // Editing makes it custom
+        g.id === groupId ? {...g, name: newName, isCustom: true } : g 
       )
     );
     toast({title: t("groupRenamed"), description: t("groupRenamedDesc", { name: newName })});
@@ -295,7 +316,6 @@ export default function DashboardPage() {
     setTabGroups(prevGroups => {
       let newGroups = prevGroups.map(g => ({ ...g, tabs: [...g.tabs] }));
   
-      // Remove from source group if it was in one
       if (sourceType === 'group' && sourceGroupId) {
         const srcGroup = newGroups.find(g => g.id === sourceGroupId);
         if (srcGroup) {
@@ -303,12 +323,11 @@ export default function DashboardPage() {
         }
       }
   
-      // Add to target group
       const tgtGroup = newGroups.find(g => g.id === targetGroupId);
       if (tgtGroup && !tgtGroup.tabs.some(t => t.id === tabId)) {
         tgtGroup.tabs.push(tabToMove);
       }
-      return newGroups.filter(g => g.tabs.length > 0 || g.isCustom); // Clean up empty non-custom groups
+      return newGroups.filter(g => g.tabs.length > 0 || g.isCustom); 
     });
     toast({ title: t("tabMoved"), description: t("tabMovedDesc", { title: tabToMove.title, groupName: tabGroups.find(g=>g.id === targetGroupId)?.name || 'target group'}) });
   };
@@ -316,7 +335,7 @@ export default function DashboardPage() {
   const handleDropOnUngroupedArea = (draggedTabInfo: DraggedTabInfo) => {
     const { tabId, sourceType, sourceGroupId } = draggedTabInfo;
   
-    if (sourceType === 'ungrouped') return; // Already ungrouped
+    if (sourceType === 'ungrouped') return; 
   
     const tabToMove = tabs.find(t => t.id === tabId);
     if (!tabToMove) return;
@@ -328,14 +347,11 @@ export default function DashboardPage() {
         if (srcGroup) {
           srcGroup.tabs = srcGroup.tabs.filter(t => t.id !== tabId);
         }
-        return newGroups.filter(g => g.tabs.length > 0 || g.isCustom); // Clean up empty non-custom groups
+        return newGroups.filter(g => g.tabs.length > 0 || g.isCustom); 
       });
     }
-    // The tab is now considered "ungrouped" as it's not in any group in `tabGroups`.
-    // `ungroupedTabs` will automatically reflect this.
     toast({ title: t("tabMovedToUngrouped"), description: t("tabMovedToUngroupedDesc", { title: tabToMove.title }) });
   };
-
 
   const hasAiGroups = tabGroups.some(g => !g.isCustom);
 
@@ -350,7 +366,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex flex-wrap gap-2 p-4 border rounded-lg shadow bg-card">
-        <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI}>
+        <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI || ungroupedTabs.length === 0}>
           <Zap className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiSuggesting') : t('aiSuggestGroups')}
         </Button>
         <Button onClick={handleSuggestInactiveTabs} disabled={isLoadingAI}>
@@ -372,7 +388,10 @@ export default function DashboardPage() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteAllGroups} className={cn(buttonVariants({ variant: "destructive" }))}>
+                <AlertDialogAction 
+                  onClick={handleDeleteAllGroups} 
+                  className={cn(buttonVariants({ variant: "destructive" }))}
+                >
                   {t("yesDeleteAllAIGroups")}
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -416,7 +435,13 @@ export default function DashboardPage() {
                 onRemoveTab={handleRemoveTabFromGroup}
                 onRemoveGroup={handleRemoveGroup}
                 onExportGroup={handleExportGroup}
-                onAddTabToGroup={handleAddTabToGroup}
+                onAddTabToGroup={(groupId) => {
+                    if (ungroupedTabs.length > 0) {
+                        handleAddTabToGroup(groupId, ungroupedTabs[0].id);
+                    } else {
+                        toast({ title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
+                    }
+                }}
                 onEditGroupName={handleEditGroupName}
                 onDropTab={handleDropOnGroup}
               />
@@ -459,7 +484,6 @@ export default function DashboardPage() {
                 sourceInfo={{ type: 'ungrouped' }}
                 onRemove={(tabId) => {
                   setTabs(prevTabs => prevTabs.filter(t => t.id !== tabId));
-                  // Also remove from any group it might be in (though ungroupedTabs should already filter this)
                   setTabGroups(prevGroups => 
                     prevGroups.map(group => ({
                       ...group,
@@ -490,4 +514,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

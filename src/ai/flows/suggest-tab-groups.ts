@@ -22,12 +22,13 @@ const ExistingGroupSchema = z.object({
 const SuggestTabGroupsInputSchema = z.object({
   ungroupedUrls: z.array(z.string().url()).describe('A list of URLs of the currently ungrouped tabs that need organization.'),
   existingGroups: z.array(ExistingGroupSchema).optional().describe('A list of already existing tab groups, for context and potential additions. Analyze these groups to understand their themes based on their names and current tabs.'),
+  targetLanguage: z.string().optional().describe('The target language for suggested group names (e.g., "en", "es"). If provided, new group names should be in this language.'),
 });
 export type SuggestTabGroupsInput = z.infer<typeof SuggestTabGroupsInputSchema>;
 
 const SuggestedGroupSchema = z.object({
-  groupName: z.string().describe('The suggested name for the tab group. If adding to an existing group, this will be the name of that existing group.'),
-  tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
+  groupName: z.string().describe('The suggested name for the tab group. If adding to an existing group, this will be the name of that existing group. If creating a new group, this name should be in the targetLanguage if specified.'),
+  tabUrls: z.array(z.string().url()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones.'),
 });
 
 const SuggestTabGroupsOutputSchema = z.array(SuggestedGroupSchema);
@@ -50,6 +51,7 @@ const prompt = ai.definePrompt({
 You will receive:
 1. \`ungroupedUrls\`: A list of URLs for tabs that are currently not in any group.
 2. \`existingGroups\` (optional): A list of tab groups that already exist, with their names, current tabs, and whether they are custom groups.
+3. \`targetLanguage\` (optional): The preferred language for any NEWLY CREATED group names (e.g., "en" for English, "es" for Spanish).
 
 Your primary goal is to decide the best placement for EACH of the \`ungroupedUrls\`.
 Your STRONG PREFERENCE should be to add ungrouped tabs to one of the \`existingGroups\` if a thematic fit exists.
@@ -66,7 +68,9 @@ Output Instructions:
 - Respond with a JSON array of group objects.
 - Each object in the array represents EITHER a NEWLY CREATED group (only if absolutely necessary, as per the guidelines above) OR an EXISTING group that has had UNGROUPED tabs ADDED to it.
 - Each group object MUST have:
-    - \`groupName\`: For a NEW group, this is the name you suggest. For an EXISTING group you're adding to, this is the EXACT name of that existing group.
+    - \`groupName\`:
+        - For a NEW group, this is the name you suggest. If \`targetLanguage\` is provided, this name MUST be in that language (e.g., if targetLanguage is "es", a new group for work could be "Trabajo"). If you cannot provide a name in the targetLanguage, use English.
+        - For an EXISTING group you're adding to, this is the EXACT name of that existing group (do not translate existing group names).
     - \`tabUrls\`:
         - For a NEW group, this array contains ONLY the \`ungroupedUrls\` you've assigned to this new group.
         - For an EXISTING group you're adding to, this array MUST contain ALL its ORIGINAL tabs PLUS the \`ungroupedUrls\` you've added to it. Do NOT omit original tabs.
@@ -97,6 +101,10 @@ Existing Tab Groups (for context and potential additions):
 {{/each}}
 {{else}}
 - No existing groups provided.
+{{/if}}
+
+{{#if targetLanguage}}
+Target language for new group names: {{{targetLanguage}}}
 {{/if}}
 `,
 });
