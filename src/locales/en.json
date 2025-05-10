@@ -114,5 +114,11 @@
   "aiSuggestionsProcessed": "AI Suggestions Processed",
   "aiGroupsCreatedAndUpdated": "AI created {created} new group(s) and updated {updated} existing group(s).",
   "aiGroupsUpdated": "AI updated {updated} existing group(s) with new tabs.",
-  "noNewOrUpdatedGroups": "AI analyzed your tabs but didn't suggest new groups or add tabs to existing ones."
+  "noNewOrUpdatedGroups": "AI analyzed your tabs but didn't suggest new groups or add tabs to existing ones.",
+  "editGroupModalTitle": "Edit Group Name",
+  "editGroupModalDescription": "Enter the new name for this group.",
+  "saveNameButton": "Save Name",
+  "groupNameCannotBeEmptyTitle": "Invalid Group Name",
+  "groupNameCannotBeEmptyDesc": "Group name cannot be empty. Please enter a valid name."
 }
+

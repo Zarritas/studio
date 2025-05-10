@@ -114,5 +114,11 @@
   "aiSuggestionsProcessed": "Sugerencias de IA Procesadas",
   "aiGroupsCreatedAndUpdated": "IA creó {created} nuevo(s) grupo(s) y actualizó {updated} grupo(s) existente(s).",
   "aiGroupsUpdated": "IA actualizó {updated} grupo(s) existente(s) con nuevas pestañas.",
-  "noNewOrUpdatedGroups": "IA analizó tus pestañas pero no sugirió nuevos grupos ni añadió pestañas a los existentes."
+  "noNewOrUpdatedGroups": "IA analizó tus pestañas pero no sugirió nuevos grupos ni añadió pestañas a los existentes.",
+  "editGroupModalTitle": "Editar Nombre del Grupo",
+  "editGroupModalDescription": "Introduce el nuevo nombre para este grupo.",
+  "saveNameButton": "Guardar Nombre",
+  "groupNameCannotBeEmptyTitle": "Nombre de Grupo Inválido",
+  "groupNameCannotBeEmptyDesc": "El nombre del grupo no puede estar vacío. Por favor, introduce un nombre válido."
 }
+
