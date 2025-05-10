@@ -30,6 +30,11 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   });
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [isLoadingTranslations, setIsLoadingTranslations] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const setLocale = useCallback((newLocale: string) => {
     if (supportedLocales.some(l => l.code === newLocale)) {
@@ -38,7 +43,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
       }
     }
-  }, [_setLocale]);
+  }, []); // _setLocale is stable and doesn't need to be in dependencies
 
   useEffect(() => {
     const loadTranslations = async () => {
@@ -63,8 +68,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       setIsLoadingTranslations(false);
     };
 
-    loadTranslations();
-  }, [locale]);
+    if (hasMounted) {
+      loadTranslations();
+    }
+  }, [locale, hasMounted]);
 
   const t = useCallback((key: string, options?: Record<string, string | number | undefined> & { defaultValue?: string }): string => {
     let message = translations[key];
@@ -82,7 +89,6 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       }
   
       Object.keys(replaceValues).forEach(placeholder => {
-        // Ensure placeholder is a valid regex string
         const escapedPlaceholder = placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`\\{${escapedPlaceholder}\\}`, 'g');
         message = message.replace(regex, String(replaceValues[placeholder]));
@@ -91,16 +97,29 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     return message;
   }, [translations]);
 
-  if (isLoadingTranslations && typeof window !== 'undefined') {
-    // Avoid rendering children until translations are loaded on client to prevent hydration mismatch
-    // For SSR, this might need a different strategy or initial props.
-    // This basic loading state prevents content flash with untranslated keys.
-     return <div className="flex items-center justify-center min-h-screen">Loading translations...</div>;
+  if (!hasMounted) {
+    // Render children with isLoadingTranslations: true to match server behavior
+    // and avoid client-side only loading UI during initial render.
+    // The `t` function will use defaults or keys during this phase.
+    return (
+      <LocaleContext.Provider value={{ locale, setLocale, t, supportedLocales, isLoadingTranslations: true }}>
+        {children}
+      </LocaleContext.Provider>
+    );
   }
 
+  // After mounting, if translations are still loading, show client-side loading indicator.
+  if (isLoadingTranslations) {
+     return (
+        <LocaleContext.Provider value={{ locale, setLocale, t, supportedLocales, isLoadingTranslations: true }}>
+            <div className="flex items-center justify-center min-h-screen">Loading translations...</div>
+        </LocaleContext.Provider>
+     );
+  }
 
+  // Translations loaded and component has mounted.
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t, supportedLocales, isLoadingTranslations }}>
+    <LocaleContext.Provider value={{ locale, setLocale, t, supportedLocales, isLoadingTranslations: false }}>
       {children}
     </LocaleContext.Provider>
   );
