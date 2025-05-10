@@ -7,12 +7,14 @@ import { AddTabModal } from '@/components/dashboard/add-tab-modal';
 import { CreateGroupModal } from '@/components/dashboard/create-group-modal';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Zap, Lightbulb, Trash2, AlertTriangle, FolderPlus, PlusCircle } from 'lucide-react';
+import { Zap, Lightbulb, Trash2, AlertTriangle, FolderPlus, PlusCircle, Layers3 } from 'lucide-react';
 import { suggestTabGroups, SuggestTabGroupsInput, SuggestTabGroupsOutput } from '@/ai/flows/suggest-tab-groups';
 import { suggestInactiveTabsClosure, SuggestInactiveTabsClosureInput, SuggestInactiveTabsClosureOutput } from '@/ai/flows/suggest-inactive-tabs-closure';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { TabItem } from '@/components/dashboard/tab-item'; // Added import for TabItem
 import {
   AlertDialog,
   AlertDialogAction,
