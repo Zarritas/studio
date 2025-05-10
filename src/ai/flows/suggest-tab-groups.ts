@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -20,7 +21,7 @@ export type SuggestTabGroupsInput = z.infer<typeof SuggestTabGroupsInputSchema>;
 const SuggestTabGroupsOutputSchema = z.array(
   z.object({
     groupName: z.string().describe('The suggested name for the tab group.'),
-    tabUrls: z.array(z.string().url()).describe('The URLs of the tabs to include in the group.'),
+    tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in the group.'), // Removed .url() here
   })
 );
 export type SuggestTabGroupsOutput = z.infer<typeof SuggestTabGroupsOutputSchema>;
@@ -54,3 +55,4 @@ const suggestTabGroupsFlow = ai.defineFlow(
     return output!;
   }
 );
+
