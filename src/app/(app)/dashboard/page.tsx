@@ -6,7 +6,7 @@ import type { Tab, TabGroup as TabGroupType } from '@/types';
 import { TabGroup } from '@/components/dashboard/tab-group';
 import { AddTabModal } from '@/components/dashboard/add-tab-modal';
 import { CreateGroupModal } from '@/components/dashboard/create-group-modal';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Zap, Lightbulb, Trash2, AlertTriangle, FolderPlus, PlusCircle, Layers3 } from 'lucide-react';
 import { suggestTabGroups, SuggestTabGroupsInput, SuggestTabGroupsOutput } from '@/ai/flows/suggest-tab-groups';
@@ -235,7 +235,7 @@ export default function DashboardPage() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteAllGroups} className={Button({variant: "destructive"}).className}>
+                <AlertDialogAction onClick={handleDeleteAllGroups} className={buttonVariants({ variant: "destructive" })}>
                   {t("yesDeleteAll")}
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -317,3 +317,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
