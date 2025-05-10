@@ -5,7 +5,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/auth-provider';
-import { LocaleProvider } from '@/lib/i18n';
+import { LocaleProvider } from '@/lib/i18n/index'; // Corrected import path if it was index.tsx previously
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,14 +36,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            <LocaleProvider>
+          <LocaleProvider> {/* LocaleProvider now wraps AuthProvider */}
+            <AuthProvider>
               {children}
               <Toaster />
-            </LocaleProvider>
-          </AuthProvider>
+            </AuthProvider>
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
+
