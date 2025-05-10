@@ -105,10 +105,29 @@ export default function DashboardPage() {
 
       const aiSuggestions = suggestedGroupsOutput.map((sg, index) => ({
           ...sg,
-          processedTabs: sg.tabUrls.map(url => {
-            const existingTab = tabs.find(t => t.url === url);
+          processedTabs: sg.tabUrls.map(urlFromAI => {
+            if (!urlFromAI || typeof urlFromAI !== 'string') return null;
+      
+            let schemedUrl = urlFromAI;
+            if (!urlFromAI.startsWith('http://') && !urlFromAI.startsWith('https://')) {
+              schemedUrl = `https://${urlFromAI}`;
+            }
+      
+            // Check if tab already exists (either by original or schemed URL)
+            const existingTab = tabs.find(t => t.url === urlFromAI || t.url === schemedUrl);
             if (existingTab) return existingTab;
-            return { id: `ai-new-tab-${url}-${index}`, title: new URL(url).hostname, url, lastAccessed: Date.now() } as Tab;
+      
+            try {
+              return { 
+                id: `ai-new-tab-${urlFromAI}-${index}`, // Use original urlFromAI for ID generation consistency
+                title: new URL(schemedUrl).hostname, // Use schemedUrl for URL object
+                url: schemedUrl, // Store the (potentially) corrected URL
+                lastAccessed: Date.now() 
+              } as Tab;
+            } catch (e) {
+              console.warn(`Invalid URL from AI after attempting to add scheme, skipping: '${urlFromAI}' -> '${schemedUrl}'`, e);
+              return null; // Skip this tab if URL is still invalid
+            }
           }).filter(Boolean) as Tab[]
       }));
       
@@ -126,13 +145,12 @@ export default function DashboardPage() {
                   // Only add if it's an originally ungrouped tab AND not already in this group
                   if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && isOriginallyUngrouped) {
                       groupToUpdate.tabs.push(aiTabFromSuggestion);
-                      currentTabsInGroupSet.add(aiTabFromSuggestion.id); // Keep track of added tabs for this iteration
+                      currentTabsInGroupSet.add(aiTabFromSuggestion.id); 
                       actuallyAddedNewTabsToThisGroup = true;
                   }
               });
               if (actuallyAddedNewTabsToThisGroup) groupsUpdatedCount++;
           } else { 
-              // Create new group only with tabs that were originally ungrouped
               const newGroupTabs = suggestion.processedTabs.filter(t => ungroupedTabs.some(ut => ut.id === t.id));
               if (newGroupTabs.length > 0) { 
                 nextTabGroupsState.push({
@@ -158,8 +176,6 @@ export default function DashboardPage() {
       } else if (suggestedGroupsOutput.length === 0 && ungroupedTabs.length > 0) {
         toastMessage = t("noNewOrUpdatedGroups");
       } else {
-        // This case might occur if AI returns suggestions that don't result in actual changes
-        // e.g., suggests putting already grouped tabs into their same group.
         toastMessage = t("noNewOrUpdatedGroups"); 
       }
       toast({ title: t("aiSuggestionsProcessed"), description: toastMessage });
@@ -437,6 +453,7 @@ export default function DashboardPage() {
                 onExportGroup={handleExportGroup}
                 onAddTabToGroup={(groupId) => {
                     if (ungroupedTabs.length > 0) {
+                        // Attempt to add the first ungrouped tab. A more sophisticated UI might allow choosing.
                         handleAddTabToGroup(groupId, ungroupedTabs[0].id);
                     } else {
                         toast({ title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
@@ -488,7 +505,7 @@ export default function DashboardPage() {
                     prevGroups.map(group => ({
                       ...group,
                       tabs: group.tabs.filter(t => t.id !== tabId)
-                    })).filter(group => group.tabs.length > 0 || group.isCustom)
+                    })).filter(group => group.tabs.length > 0 || group.isCustom) // Ensure custom groups persist even if empty
                   );
               }} />
             ))}
@@ -514,3 +531,6 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+    
