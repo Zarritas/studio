@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -37,6 +38,14 @@ const initialTabs: Tab[] = [
   { id: '5', title: 'GitHub', url: 'https://github.com', lastAccessed: Date.now() - 1000 * 60 * 30 },
   { id: '6', title: 'Google News', url: 'https://news.google.com', lastAccessed: Date.now() - 1000 * 60 * 60 * 24 },
   { id: '7', title: 'MDN Web Docs', url: 'https://developer.mozilla.org', lastAccessed: Date.now() - 1000 * 60 * 15 },
+  { id: '8', title: 'Stack Overflow', url: 'https://stackoverflow.com', lastAccessed: Date.now() - 1000 * 60 * 45 },
+  { id: '9', title: 'YouTube', url: 'https://www.youtube.com', lastAccessed: Date.now() - 1000 * 60 * 20 },
+  { id: '10', title: 'Twitter / X', url: 'https://x.com', lastAccessed: Date.now() - 1000 * 60 * 50 },
+  { id: '11', title: 'Figma Community', url: 'https://www.figma.com/community', lastAccessed: Date.now() - 1000 * 60 * 60 * 3 },
+  { id: '12', title: 'Google Drive', url: 'https://drive.google.com', lastAccessed: Date.now() - 1000 * 60 * 120 },
+  { id: '13', title: 'Notion', url: 'https://www.notion.so', lastAccessed: Date.now() - 1000 * 60 * 90 },
+  { id: '14', title: 'BBC News', url: 'https://www.bbc.com/news', lastAccessed: Date.now() - 1000 * 60 * 60 * 5 },
+  { id: '15', title: 'Wikipedia', url: 'https://www.wikipedia.org', lastAccessed: Date.now() - 1000 * 60 * 25 },
 ];
 
 export default function DashboardPage() {
@@ -82,6 +91,7 @@ export default function DashboardPage() {
           processedTabs: sg.tabUrls.map(url => {
             const existingTab = tabs.find(t => t.url === url);
             if (existingTab) return existingTab;
+            // This case should ideally not happen if AI only uses provided URLs, but as a fallback:
             return { id: `ai-new-tab-${url}-${index}`, title: new URL(url).hostname, url, lastAccessed: Date.now() } as Tab;
           }).filter(Boolean) as Tab[]
       }));
@@ -93,28 +103,33 @@ export default function DashboardPage() {
           if (existingGroupIndex !== -1) { 
               const groupToUpdate = nextTabGroupsState[existingGroupIndex];
               const currentTabsInGroupSet = new Set(groupToUpdate.tabs.map(t => t.id));
-              let actuallyAddedNewTabs = false;
+              let actuallyAddedNewTabsToThisGroup = false;
 
               suggestion.processedTabs.forEach(aiTabFromSuggestion => {
                   const isOriginallyUngrouped = ungroupedTabs.some(ut => ut.id === aiTabFromSuggestion.id);
                   if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && isOriginallyUngrouped) {
                       groupToUpdate.tabs.push(aiTabFromSuggestion);
                       currentTabsInGroupSet.add(aiTabFromSuggestion.id);
-                      actuallyAddedNewTabs = true;
+                      actuallyAddedNewTabsToThisGroup = true;
                   } else if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && !isOriginallyUngrouped) {
-                    groupToUpdate.tabs.push(aiTabFromSuggestion);
-                    currentTabsInGroupSet.add(aiTabFromSuggestion.id);
+                    // This tab was part of the original group, ensure it stays if AI returned it
+                    // Or if it's a new tab AI hallucinated (which it shouldn't)
+                    // No specific action needed here if it's already in groupToUpdate.tabs from the spread,
+                    // but we ensure it's correctly processed (e.g. if AI suggests a new tab that was part of its input)
                   }
               });
-              if (actuallyAddedNewTabs) groupsUpdatedCount++;
+              if (actuallyAddedNewTabsToThisGroup) groupsUpdatedCount++;
           } else { 
-              nextTabGroupsState.push({
-                  id: `ai-group-${Date.now()}-${suggestion.groupName.replace(/\s+/g, '-')}`,
-                  name: suggestion.groupName,
-                  tabs: suggestion.processedTabs.filter(t => ungroupedTabs.some(ut => ut.id === t.id)),
-                  isCustom: false,
-              });
-              newGroupsCreatedCount++;
+              const newGroupTabs = suggestion.processedTabs.filter(t => ungroupedTabs.some(ut => ut.id === t.id));
+              if (newGroupTabs.length > 0) { // Only create a new group if it has ungrouped tabs to add
+                nextTabGroupsState.push({
+                    id: `ai-group-${Date.now()}-${suggestion.groupName.replace(/\s+/g, '-')}`,
+                    name: suggestion.groupName,
+                    tabs: newGroupTabs,
+                    isCustom: false,
+                });
+                newGroupsCreatedCount++;
+              }
           }
       });
       
@@ -130,7 +145,7 @@ export default function DashboardPage() {
       } else if (suggestedGroupsOutput.length === 0 && ungroupedTabs.length > 0) {
         toastMessage = t("noNewOrUpdatedGroups");
       } else {
-        toastMessage = t("noNewOrUpdatedGroups");
+        toastMessage = t("noNewOrUpdatedGroups"); // Default for no changes or if AI output was empty
       }
       toast({ title: t("aiSuggestionsProcessed"), description: toastMessage });
 
@@ -237,18 +252,23 @@ export default function DashboardPage() {
   };
 
   const handleDeleteAllGroups = () => {
-    setTabGroups(prevGroups => prevGroups.filter(g => g.isCustom));
+    setTabGroups(prevGroups => prevGroups.filter(g => g.isCustom)); // Keep only custom groups
     toast({ title: t("allAIGroupsDeleted"), description: t("allAIGroupsDeletedDesc"), variant: "destructive" });
   };
   
   const handleAddTabToGroup = (groupId: string) => {
+    // This function might be better suited for a modal or specific UI to select which tab to add
+    // For now, let's assume it's contextually clear or a placeholder.
+    // If we want to add the *first* ungrouped tab:
     if (ungroupedTabs.length > 0) {
-      const tabToAdd = ungroupedTabs[0]; // Add the first ungrouped tab
+      const tabToAdd = ungroupedTabs[0]; 
       setTabGroups(prevGroups => 
         prevGroups.map(g => 
           g.id === groupId ? {...g, tabs: [...g.tabs, tabToAdd]} : g
         )
       );
+      // The tab is no longer "ungrouped" in the sense of being directly in the `tabs` state but not in any group.
+      // However, the `ungroupedTabs` computed value will update automatically.
       toast({title: t("tabAddedToGroup"), description: t("tabAddedToGroupDesc", { title: tabToAdd.title, group: tabGroups.find(g=>g.id === groupId)?.name || '' })});
     } else {
       toast({title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
@@ -258,7 +278,7 @@ export default function DashboardPage() {
   const handleEditGroupName = (groupId: string, newName: string) => {
     setTabGroups(prevGroups => 
       prevGroups.map(g => 
-        g.id === groupId ? {...g, name: newName} : g
+        g.id === groupId ? {...g, name: newName, isCustom: true } : g // Editing makes it custom
       )
     );
     toast({title: t("groupRenamed"), description: t("groupRenamedDesc", { name: newName })});
@@ -288,7 +308,7 @@ export default function DashboardPage() {
       if (tgtGroup && !tgtGroup.tabs.some(t => t.id === tabId)) {
         tgtGroup.tabs.push(tabToMove);
       }
-      return newGroups.filter(g => g.tabs.length > 0 || g.isCustom);
+      return newGroups.filter(g => g.tabs.length > 0 || g.isCustom); // Clean up empty non-custom groups
     });
     toast({ title: t("tabMoved"), description: t("tabMovedDesc", { title: tabToMove.title, groupName: tabGroups.find(g=>g.id === targetGroupId)?.name || 'target group'}) });
   };
@@ -308,9 +328,11 @@ export default function DashboardPage() {
         if (srcGroup) {
           srcGroup.tabs = srcGroup.tabs.filter(t => t.id !== tabId);
         }
-        return newGroups.filter(g => g.tabs.length > 0 || g.isCustom);
+        return newGroups.filter(g => g.tabs.length > 0 || g.isCustom); // Clean up empty non-custom groups
       });
     }
+    // The tab is now considered "ungrouped" as it's not in any group in `tabGroups`.
+    // `ungroupedTabs` will automatically reflect this.
     toast({ title: t("tabMovedToUngrouped"), description: t("tabMovedToUngroupedDesc", { title: tabToMove.title }) });
   };
 
@@ -350,7 +372,7 @@ export default function DashboardPage() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteAllGroups} className={buttonVariants({ variant: "destructive" })}>
+                <AlertDialogAction onClick={handleDeleteAllGroups} className={cn(buttonVariants({ variant: "destructive" }))}>
                   {t("yesDeleteAllAIGroups")}
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -468,3 +490,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
