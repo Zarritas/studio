@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -28,7 +27,7 @@ export type SuggestTabGroupsInput = z.infer<typeof SuggestTabGroupsInputSchema>;
 
 const SuggestedGroupSchema = z.object({
   groupName: z.string().describe('The suggested name for the tab group. If adding to an existing group, this will be the name of that existing group. If creating a new group, this name should be in the targetLanguage if specified.'),
-  tabUrls: z.array(z.string().url().or(z.string())).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones. If creating a new group, this includes the relevant ungrouped URLs.'),
+  tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones. If creating a new group, this includes the relevant ungrouped URLs. All entries must be valid URLs.'),
 });
 
 const SuggestTabGroupsOutputSchema = z.array(SuggestedGroupSchema);
@@ -127,4 +126,3 @@ const suggestTabGroupsFlow = ai.defineFlow(
     return output!;
   }
 );
-
