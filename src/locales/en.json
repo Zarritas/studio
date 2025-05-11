@@ -178,5 +178,13 @@
   "apiKeyManagementDesc": "Manage your API keys for AI services.",
   "geminiApiKeyLabel": "Gemini API Key",
   "geminiApiKeyPlaceholder": "Enter your Google Gemini API Key",
-  "geminiApiKeyDesc": "Your Gemini API Key will be used for AI-powered suggestions. It is stored locally in your browser."
+  "geminiApiKeyDesc": "Your Gemini API Key will be used for AI-powered suggestions. It is stored locally in your browser.",
+  "apiKeyRequiredTitle": "API Key Required",
+  "apiKeyRequiredDesc": "Please set your Gemini API Key in settings to use AI features.",
+  "apiKeyRequiredTooltip": "Gemini API Key needed for AI features.",
+  "goToSettings": "Go to Settings",
+  "checkingApiKey": "Checking API Key...",
+  "checkingApiKeyDesc": "Please wait while we check your API key configuration."
 }
+
+```

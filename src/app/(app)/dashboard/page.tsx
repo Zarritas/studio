@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -7,7 +8,7 @@ import { AddTabModal } from '@/components/dashboard/add-tab-modal';
 import { CreateGroupModal } from '@/components/dashboard/create-group-modal';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Zap, Lightbulb, Trash2, AlertTriangle, Layers3 } from 'lucide-react';
+import { Zap, Lightbulb, Trash2, AlertTriangle, Layers3, KeyRound } from 'lucide-react';
 import { suggestTabGroups, SuggestTabGroupsInput, SuggestTabGroupsOutput } from '@/ai/flows/suggest-tab-groups';
 import { suggestInactiveTabsClosure, SuggestInactiveTabsClosureInput, SuggestInactiveTabsClosureOutput } from '@/ai/flows/suggest-inactive-tabs-closure';
 import { useToast } from '@/hooks/use-toast';
@@ -27,8 +28,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { useDashboardContext } from '@/contexts/DashboardContext';
+import Link from 'next/link';
 
 const initialTabs: Tab[] = [
   { id: '1', title: 'Next.js Docs', url: 'https://nextjs.org/docs', lastAccessed: Date.now() - 1000 * 60 * 5, faviconUrl: `https://www.google.com/s2/favicons?domain=nextjs.org&sz=32` },
@@ -73,10 +76,31 @@ function DashboardPageContent() {
   const { t, locale } = useTranslation();
   const [isUngroupedDragOver, setIsUngroupedDragOver] = useState(false);
   const { registerAddTabsBatch, registerCreateGroupsWithTabsBatch } = useDashboardContext();
+  const [geminiApiKey, setGeminiApiKey] = useState<string | null>(null);
+  const [isApiKeyChecked, setIsApiKeyChecked] = useState(false);
 
   const ungroupedTabs = tabs.filter(tab => !tabGroups.some(group => group.tabs.some(t => t.id === tab.id)));
 
+  useEffect(() => {
+    const storedSettings = localStorage.getItem('tabwise_app_settings');
+    if (storedSettings) {
+      const settings = JSON.parse(storedSettings);
+      setGeminiApiKey(settings.geminiApiKey || null);
+    }
+    setIsApiKeyChecked(true);
+  }, []);
+
   const handleSuggestTabGroups = async () => {
+    if (!isApiKeyChecked) {
+        toast({ title: t("checkingApiKey"), description: t("checkingApiKeyDesc"), variant: "default" });
+        return;
+    }
+    if (!geminiApiKey) {
+      toast({ title: t("apiKeyRequiredTitle"), description: t("apiKeyRequiredDesc"), variant: "destructive" });
+      setAiSuggestionError(t("apiKeyRequiredTitle"));
+      return;
+    }
+
     setIsLoadingAI(true);
     setAiSuggestionError(null);
 
@@ -190,6 +214,16 @@ function DashboardPageContent() {
   };
 
   const handleSuggestInactiveTabs = async () => {
+    if (!isApiKeyChecked) {
+        toast({ title: t("checkingApiKey"), description: t("checkingApiKeyDesc"), variant: "default" });
+        return;
+    }
+    if (!geminiApiKey) {
+      toast({ title: t("apiKeyRequiredTitle"), description: t("apiKeyRequiredDesc"), variant: "destructive" });
+      setAiSuggestionError(t("apiKeyRequiredTitle"));
+      return;
+    }
+
     setIsLoadingAI(true);
     setAiSuggestionError(null);
     const tabActivityData = JSON.stringify(tabs.map(t => ({ title: t.title, url: t.url, lastAccessed: t.lastAccessed })));
@@ -465,6 +499,28 @@ function DashboardPageContent() {
 
   const hasAiGroups = tabGroups.some(g => !g.isCustom);
 
+  const AiSuggestButtonWrapper = ({children}: {children: React.ReactNode}) => {
+    if (!isApiKeyChecked || geminiApiKey) {
+        return <>{children}</>;
+    }
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>{children}</TooltipTrigger>
+                <TooltipContent>
+                    <p>{t('apiKeyRequiredTooltip')}</p>
+                     <Button variant="link" size="sm" asChild className="p-0 h-auto">
+                        <Link href="/settings">
+                            {t('goToSettings')} <KeyRound className="ml-1 h-3 w-3"/>
+                        </Link>
+                    </Button>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+  };
+
+
   return (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -476,12 +532,24 @@ function DashboardPageContent() {
         </div>
 
         <div className="flex flex-wrap gap-2 p-4 border rounded-lg shadow bg-card">
-          <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI || ungroupedTabs.length === 0}>
-            <Zap className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiSuggesting') : t('aiSuggestGroups')}
-          </Button>
-          <Button onClick={handleSuggestInactiveTabs} disabled={isLoadingAI}>
-            <Lightbulb className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiAnalyzing') : t('aiSuggestCloseTabs')}
-          </Button>
+          <AiSuggestButtonWrapper>
+            <Button 
+              onClick={handleSuggestTabGroups} 
+              disabled={isLoadingAI || ungroupedTabs.length === 0 || (!isApiKeyChecked || !geminiApiKey)}
+            >
+              <Zap className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiSuggesting') : t('aiSuggestGroups')}
+            </Button>
+          </AiSuggestButtonWrapper>
+
+          <AiSuggestButtonWrapper>
+            <Button 
+              onClick={handleSuggestInactiveTabs} 
+              disabled={isLoadingAI || (!isApiKeyChecked || !geminiApiKey)}
+            >
+              <Lightbulb className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiAnalyzing') : t('aiSuggestCloseTabs')}
+            </Button>
+          </AiSuggestButtonWrapper>
+          
           {hasAiGroups && (
              <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -514,7 +582,16 @@ function DashboardPageContent() {
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>{t("aiSuggestionErrorTitle")}</AlertTitle>
-            <AlertDescription>{aiSuggestionError}</AlertDescription>
+            <AlertDescription>
+                {aiSuggestionError}
+                {aiSuggestionError === t("apiKeyRequiredTitle") && (
+                    <Button variant="link" asChild className="p-0 h-auto ml-1">
+                        <Link href="/settings">
+                             {t('goToSettings')}
+                        </Link>
+                    </Button>
+                )}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -615,9 +692,14 @@ function DashboardPageContent() {
             </p>
             <div className="mt-6 flex justify-center gap-2">
                <AddTabModal onAddTab={handleAddTab} />
-               <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI || ungroupedTabs.length === 0}>
-                  <Zap className="mr-2 h-4 w-4" /> {t('aiSuggestGroups')}
-              </Button>
+                <AiSuggestButtonWrapper>
+                  <Button 
+                      onClick={handleSuggestTabGroups} 
+                      disabled={isLoadingAI || ungroupedTabs.length === 0 || (!isApiKeyChecked || !geminiApiKey)}
+                  >
+                      <Zap className="mr-2 h-4 w-4" /> {t('aiSuggestGroups')}
+                  </Button>
+                </AiSuggestButtonWrapper>
             </div>
           </div>
         )}

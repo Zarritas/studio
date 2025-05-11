@@ -178,5 +178,13 @@
   "apiKeyManagementDesc": "Gestiona tus claves API para los servicios de IA.",
   "geminiApiKeyLabel": "Clave API de Gemini",
   "geminiApiKeyPlaceholder": "Introduce tu Clave API de Google Gemini",
-  "geminiApiKeyDesc": "Tu Clave API de Gemini se utilizará para las sugerencias impulsadas por IA. Se almacena localmente en tu navegador."
+  "geminiApiKeyDesc": "Tu Clave API de Gemini se utilizará para las sugerencias impulsadas por IA. Se almacena localmente en tu navegador.",
+  "apiKeyRequiredTitle": "Clave API Requerida",
+  "apiKeyRequiredDesc": "Por favor, configura tu Clave API de Gemini en los ajustes para usar las funciones de IA.",
+  "apiKeyRequiredTooltip": "Se necesita Clave API de Gemini para funciones de IA.",
+  "goToSettings": "Ir a Configuración",
+  "checkingApiKey": "Verificando Clave API...",
+  "checkingApiKeyDesc": "Por favor, espera mientras verificamos la configuración de tu clave API."
 }
+
+```
