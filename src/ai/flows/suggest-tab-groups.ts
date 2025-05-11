@@ -15,12 +15,12 @@ import {z}from 'genkit';
 
 const ExistingGroupSchema = z.object({
   groupName: z.string().describe('The name of the existing tab group.'),
-  tabUrls: z.array(z.string()).describe('The URLs of the tabs currently in this group. These URLs provide strong contextual clues about the group\'s theme.'),
+  tabUrls: z.array(z.string().url().or(z.string())).describe('The URLs of the tabs currently in this group. These URLs provide strong contextual clues about the group\'s theme.'),
   isCustom: z.boolean().optional().describe('Whether this group was manually created by the user. AI should be cautious about modifying custom groups unless explicitly adding relevant ungrouped tabs.'),
 });
 
 const SuggestTabGroupsInputSchema = z.object({
-  ungroupedUrls: z.array(z.string()).describe('A list of URLs of the currently ungrouped tabs that need organization. Analyze each URL for its content and context.'),
+  ungroupedUrls: z.array(z.string().url().or(z.string())).describe('A list of URLs of the currently ungrouped tabs that need organization. Analyze each URL for its content and context.'),
   existingGroups: z.array(ExistingGroupSchema).optional().describe('A list of already existing tab groups, for context and potential additions. Analyze these groups to understand their themes based on their names and, critically, the collective content of their current tabs.'),
   targetLanguage: z.string().optional().describe('The target language for suggested group names (e.g., "en", "es"). If provided, new group names should be in this language.'),
 });
@@ -28,7 +28,7 @@ export type SuggestTabGroupsInput = z.infer<typeof SuggestTabGroupsInputSchema>;
 
 const SuggestedGroupSchema = z.object({
   groupName: z.string().describe('The suggested name for the tab group. If adding to an existing group, this will be the name of that existing group. If creating a new group, this name should be in the targetLanguage if specified.'),
-  tabUrls: z.array(z.string()).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones. If creating a new group, this includes the relevant ungrouped URLs.'),
+  tabUrls: z.array(z.string().url().or(z.string())).describe('The URLs of the tabs to include in this group. If updating an existing group, this includes its original tabs plus any newly added ones. If creating a new group, this includes the relevant ungrouped URLs.'),
 });
 
 const SuggestTabGroupsOutputSchema = z.array(SuggestedGroupSchema);
@@ -61,7 +61,7 @@ Only create a NEW tab group for \`ungroupedUrls\` if:
 1. No \`existingGroup\` is a suitable thematic match, based on a thorough analysis of both its name and its current tabs' collective content.
 2. The \`ungroupedUrls\` form a distinct new theme not covered by any existing group.
 
-CRITICAL: AVOID CREATING A NEW GROUP IF AN EXISTING GROUP HAS A VERY SIMILAR NAME OR ALREADY COVERS THE SAME TOPIC/THEME (as determined by its name AND its current tabs). In such cases, you MUST add the relevant \`ungroupedUrls\` to that existing group instead of creating a duplicate or near-duplicate group.
+CRITICAL: AVOID CREATING A NEW GROUP IF AN EXISTING GROUP HAS A VERY SIMILAR NAME OR ALREADY COVERS THE SAME TOPIC/THEME (as determined by its name AND its current tabs). In such cases, you MUST add the relevant \`ungroupedUrls\` to that existing group instead of creating a duplicate or near-duplicate group. For example, if an existing group is named "CSS Resources" and contains CSS-related tabs, and an ungrouped tab is about "Tailwind CSS", DO NOT create a new group named "CSS" or "Tailwind". Instead, ADD the "Tailwind CSS" tab to the existing "CSS Resources" group. BE VERY STRICT ABOUT THIS RULE.
 
 Output Instructions:
 - Respond with a JSON array of group objects.
