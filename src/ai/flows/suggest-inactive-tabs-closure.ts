@@ -1,4 +1,3 @@
-'use server';
 
 /**
  * @fileOverview This file defines a Genkit flow to suggest closing inactive tabs based on user usage patterns.
