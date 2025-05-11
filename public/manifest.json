@@ -31,7 +31,6 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "options_page": "dashboard.html",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://www.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;"
   }
