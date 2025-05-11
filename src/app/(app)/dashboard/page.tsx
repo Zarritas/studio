@@ -29,42 +29,43 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
+import { DashboardProvider } from '@/contexts/DashboardContext';
 
 const initialTabs: Tab[] = [
-  { id: '1', title: 'Next.js Docs', url: 'https://nextjs.org/docs', lastAccessed: Date.now() - 1000 * 60 * 5 },
-  { id: '2', title: 'Tailwind CSS', url: 'https://tailwindcss.com/docs/installation', lastAccessed: Date.now() - 1000 * 60 * 10 },
-  { id: '3', title: 'ShadCN UI', url: 'https://ui.shadcn.com/docs', lastAccessed: Date.now() - 1000 * 60 * 2 },
-  { id: '4', title: 'React Docs', url: 'https://react.dev/', lastAccessed: Date.now() - 1000 * 60 * 60 * 2 },
-  { id: '5', title: 'GitHub - My Project', url: 'https://github.com/my-username/my-repo', lastAccessed: Date.now() - 1000 * 60 * 30 },
-  { id: '6', title: 'Google News - Tech', url: 'https://news.google.com/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US%3Aen', lastAccessed: Date.now() - 1000 * 60 * 60 * 24 },
-  { id: '7', title: 'MDN Web Docs - JavaScript', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript', lastAccessed: Date.now() - 1000 * 60 * 15 },
-  { id: '8', title: 'Stack Overflow - React Hooks Question', url: 'https://stackoverflow.com/questions/tagged/react-hooks', lastAccessed: Date.now() - 1000 * 60 * 45 },
-  { id: '9', title: 'YouTube - Coding Tutorial', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', lastAccessed: Date.now() - 1000 * 60 * 20 }, 
-  { id: '10', title: 'Twitter / X - Tech News Feed', url: 'https://x.com/elonmusk', lastAccessed: Date.now() - 1000 * 60 * 50 },
-  { id: '11', title: 'Figma Community - UI Kits', url: 'https://www.figma.com/community/category/ui_kits', lastAccessed: Date.now() - 1000 * 60 * 60 * 3 },
-  { id: '12', title: 'Google Drive - Project Files', url: 'https://drive.google.com/drive/my-drive', lastAccessed: Date.now() - 1000 * 60 * 120 },
-  { id: '13', title: 'Notion - Meeting Notes', url: 'https://www.notion.so/meeting-notes-xyz', lastAccessed: Date.now() - 1000 * 60 * 90 },
-  { id: '14', title: 'Spotify - Lo-fi Beats', url: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M', lastAccessed: Date.now() - 1000 * 60 * 60 * 5 },
-  { id: '15', title: 'Wikipedia - AI History', url: 'https://en.wikipedia.org/wiki/History_of_artificial_intelligence', lastAccessed: Date.now() - 1000 * 60 * 25 },
-  { id: '16', title: 'Reddit - r/programming', url: 'https://www.reddit.com/r/programming/', lastAccessed: Date.now() - 1000 * 60 * 35 },
-  { id: '17', title: 'AWS Console - S3 Buckets', url: 'https://s3.console.aws.amazon.com/s3/home', lastAccessed: Date.now() - 1000 * 60 * 60 * 4 },
-  { id: '18', title: 'Netflix - New Series', url: 'https://www.netflix.com/browse', lastAccessed: Date.now() - 1000 * 60 * 180 },
-  { id: '19', title: 'LinkedIn - My Network', url: 'https://www.linkedin.com/mynetwork/', lastAccessed: Date.now() - 1000 * 60 * 55 },
-  { id: '20', title: 'Duolingo - Spanish Lesson', url: 'https://www.duolingo.com/learn', lastAccessed: Date.now() - 1000 * 60 * 5 },
-  { id: '21', title: 'Coursera - Machine Learning Course', url: 'https://www.coursera.org/learn/machine-learning', lastAccessed: Date.now() - 1000 * 60 * 60 * 48 },
-  { id: '22', title: 'Amazon - Shopping Cart', url: 'https://www.amazon.com/gp/cart/view.html', lastAccessed: Date.now() - 1000 * 60 * 10 },
-  { id: '23', title: 'Medium - Tech Article', url: 'https://medium.com/topic/technology', lastAccessed: Date.now() - 1000 * 60 * 60 },
-  { id: '24', title: 'The Verge - Gadget Reviews', url: 'https://www.theverge.com/reviews', lastAccessed: Date.now() - 1000 * 60 * 120 },
-  { id: '25', title: 'Khan Academy - Math Practice', url: 'https://www.khanacademy.org/math', lastAccessed: Date.now() - 1000 * 60 * 300 },
-  { id: '26', title: 'Pinterest - Home Decor Ideas', url: 'https://www.pinterest.com/ideas/home-decor/914173009174/', lastAccessed: Date.now() - 1000 * 60 * 40 },
-  { id: '27', title: 'ESPN - Sports News', url: 'https://www.espn.com/', lastAccessed: Date.now() - 1000 * 60 * 70 },
-  { id: '28', title: 'AllRecipes - Dinner Ideas', url: 'https://www.allrecipes.com/', lastAccessed: Date.now() - 1000 * 60 * 150 },
-  { id: '29', title: 'Dev.to - Blog Post', url: 'https://dev.to/', lastAccessed: Date.now() - 1000 * 60 * 60 * 6 },
-  { id: '30', title: 'Adobe Color - Color Palette Generator', url: 'https://color.adobe.com/create/color-wheel', lastAccessed: Date.now() - 1000 * 60 * 80 },
+  { id: '1', title: 'Next.js Docs', url: 'https://nextjs.org/docs', lastAccessed: Date.now() - 1000 * 60 * 5, faviconUrl: `https://www.google.com/s2/favicons?domain=nextjs.org&sz=32` },
+  { id: '2', title: 'Tailwind CSS', url: 'https://tailwindcss.com/docs/installation', lastAccessed: Date.now() - 1000 * 60 * 10, faviconUrl: `https://www.google.com/s2/favicons?domain=tailwindcss.com&sz=32` },
+  { id: '3', title: 'ShadCN UI', url: 'https://ui.shadcn.com/docs', lastAccessed: Date.now() - 1000 * 60 * 2, faviconUrl: `https://www.google.com/s2/favicons?domain=ui.shadcn.com&sz=32` },
+  { id: '4', title: 'React Docs', url: 'https://react.dev/', lastAccessed: Date.now() - 1000 * 60 * 60 * 2, faviconUrl: `https://www.google.com/s2/favicons?domain=react.dev&sz=32` },
+  { id: '5', title: 'GitHub - My Project', url: 'https://github.com/my-username/my-repo', lastAccessed: Date.now() - 1000 * 60 * 30, faviconUrl: `https://www.google.com/s2/favicons?domain=github.com&sz=32` },
+  { id: '6', title: 'Google News - Tech', url: 'https://news.google.com/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US%3Aen', lastAccessed: Date.now() - 1000 * 60 * 60 * 24, faviconUrl: `https://www.google.com/s2/favicons?domain=news.google.com&sz=32` },
+  { id: '7', title: 'MDN Web Docs - JavaScript', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript', lastAccessed: Date.now() - 1000 * 60 * 15, faviconUrl: `https://www.google.com/s2/favicons?domain=developer.mozilla.org&sz=32` },
+  { id: '8', title: 'Stack Overflow - React Hooks Question', url: 'https://stackoverflow.com/questions/tagged/react-hooks', lastAccessed: Date.now() - 1000 * 60 * 45, faviconUrl: `https://www.google.com/s2/favicons?domain=stackoverflow.com&sz=32` },
+  { id: '9', title: 'YouTube - Coding Tutorial', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', lastAccessed: Date.now() - 1000 * 60 * 20, faviconUrl: `https://www.google.com/s2/favicons?domain=youtube.com&sz=32` }, 
+  { id: '10', title: 'Twitter / X - Tech News Feed', url: 'https://x.com/elonmusk', lastAccessed: Date.now() - 1000 * 60 * 50, faviconUrl: `https://www.google.com/s2/favicons?domain=x.com&sz=32` },
+  { id: '11', title: 'Figma Community - UI Kits', url: 'https://www.figma.com/community/category/ui_kits', lastAccessed: Date.now() - 1000 * 60 * 60 * 3, faviconUrl: `https://www.google.com/s2/favicons?domain=figma.com&sz=32` },
+  { id: '12', title: 'Google Drive - Project Files', url: 'https://drive.google.com/drive/my-drive', lastAccessed: Date.now() - 1000 * 60 * 120, faviconUrl: `https://www.google.com/s2/favicons?domain=drive.google.com&sz=32` },
+  { id: '13', title: 'Notion - Meeting Notes', url: 'https://www.notion.so/meeting-notes-xyz', lastAccessed: Date.now() - 1000 * 60 * 90, faviconUrl: `https://www.google.com/s2/favicons?domain=notion.so&sz=32` },
+  { id: '14', title: 'Spotify - Lo-fi Beats', url: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M', lastAccessed: Date.now() - 1000 * 60 * 60 * 5, faviconUrl: `https://www.google.com/s2/favicons?domain=open.spotify.com&sz=32` },
+  { id: '15', title: 'Wikipedia - AI History', url: 'https://en.wikipedia.org/wiki/History_of_artificial_intelligence', lastAccessed: Date.now() - 1000 * 60 * 25, faviconUrl: `https://www.google.com/s2/favicons?domain=en.wikipedia.org&sz=32` },
+  { id: '16', title: 'Reddit - r/programming', url: 'https://www.reddit.com/r/programming/', lastAccessed: Date.now() - 1000 * 60 * 35, faviconUrl: `https://www.google.com/s2/favicons?domain=reddit.com&sz=32` },
+  { id: '17', title: 'AWS Console - S3 Buckets', url: 'https://s3.console.aws.amazon.com/s3/home', lastAccessed: Date.now() - 1000 * 60 * 60 * 4, faviconUrl: `https://www.google.com/s2/favicons?domain=aws.amazon.com&sz=32` },
+  { id: '18', title: 'Netflix - New Series', url: 'https://www.netflix.com/browse', lastAccessed: Date.now() - 1000 * 60 * 180, faviconUrl: `https://www.google.com/s2/favicons?domain=netflix.com&sz=32` },
+  { id: '19', title: 'LinkedIn - My Network', url: 'https://www.linkedin.com/mynetwork/', lastAccessed: Date.now() - 1000 * 60 * 55, faviconUrl: `https://www.google.com/s2/favicons?domain=linkedin.com&sz=32` },
+  { id: '20', title: 'Duolingo - Spanish Lesson', url: 'https://www.duolingo.com/learn', lastAccessed: Date.now() - 1000 * 60 * 5, faviconUrl: `https://www.google.com/s2/favicons?domain=duolingo.com&sz=32` },
+  { id: '21', title: 'Coursera - Machine Learning Course', url: 'https://www.coursera.org/learn/machine-learning', lastAccessed: Date.now() - 1000 * 60 * 60 * 48, faviconUrl: `https://www.google.com/s2/favicons?domain=coursera.org&sz=32` },
+  { id: '22', title: 'Amazon - Shopping Cart', url: 'https://www.amazon.com/gp/cart/view.html', lastAccessed: Date.now() - 1000 * 60 * 10, faviconUrl: `https://www.google.com/s2/favicons?domain=amazon.com&sz=32` },
+  { id: '23', title: 'Medium - Tech Article', url: 'https://medium.com/topic/technology', lastAccessed: Date.now() - 1000 * 60 * 60, faviconUrl: `https://www.google.com/s2/favicons?domain=medium.com&sz=32` },
+  { id: '24', title: 'The Verge - Gadget Reviews', url: 'https://www.theverge.com/reviews', lastAccessed: Date.now() - 1000 * 60 * 120, faviconUrl: `https://www.google.com/s2/favicons?domain=theverge.com&sz=32` },
+  { id: '25', title: 'Khan Academy - Math Practice', url: 'https://www.khanacademy.org/math', lastAccessed: Date.now() - 1000 * 60 * 300, faviconUrl: `https://www.google.com/s2/favicons?domain=khanacademy.org&sz=32` },
+  { id: '26', title: 'Pinterest - Home Decor Ideas', url: 'https://www.pinterest.com/ideas/home-decor/914173009174/', lastAccessed: Date.now() - 1000 * 60 * 40, faviconUrl: `https://www.google.com/s2/favicons?domain=pinterest.com&sz=32` },
+  { id: '27', title: 'ESPN - Sports News', url: 'https://www.espn.com/', lastAccessed: Date.now() - 1000 * 60 * 70, faviconUrl: `https://www.google.com/s2/favicons?domain=espn.com&sz=32` },
+  { id: '28', title: 'AllRecipes - Dinner Ideas', url: 'https://www.allrecipes.com/', lastAccessed: Date.now() - 1000 * 60 * 150, faviconUrl: `https://www.google.com/s2/favicons?domain=allrecipes.com&sz=32` },
+  { id: '29', title: 'Dev.to - Blog Post', url: 'https://dev.to/', lastAccessed: Date.now() - 1000 * 60 * 60 * 6, faviconUrl: `https://www.google.com/s2/favicons?domain=dev.to&sz=32` },
+  { id: '30', title: 'Adobe Color - Color Palette Generator', url: 'https://color.adobe.com/create/color-wheel', lastAccessed: Date.now() - 1000 * 60 * 80, faviconUrl: `https://www.google.com/s2/favicons?domain=color.adobe.com&sz=32` },
 ];
 
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const [tabs, setTabs] = useState<Tab[]>(initialTabs);
   const [tabGroups, setTabGroups] = useState<TabGroupType[]>([]);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
@@ -113,20 +114,21 @@ export default function DashboardPage() {
               schemedUrl = `https://${urlFromAI}`;
             }
       
-            // Check if tab already exists (either by original or schemed URL)
             const existingTab = tabs.find(t => t.url === urlFromAI || t.url === schemedUrl);
             if (existingTab) return existingTab;
       
             try {
+              const newUrlObject = new URL(schemedUrl);
               return { 
-                id: `ai-new-tab-${urlFromAI}-${index}`, // Use original urlFromAI for ID generation consistency
-                title: new URL(schemedUrl).hostname, // Use schemedUrl for URL object
-                url: schemedUrl, // Store the (potentially) corrected URL
-                lastAccessed: Date.now() 
+                id: `ai-new-tab-${newUrlObject.hostname}-${index}-${Math.random()}`, 
+                title: newUrlObject.hostname, 
+                url: schemedUrl, 
+                lastAccessed: Date.now(),
+                faviconUrl: `https://www.google.com/s2/favicons?domain=${newUrlObject.hostname}&sz=32`
               } as Tab;
             } catch (e) {
               console.warn(`Invalid URL from AI after attempting to add scheme, skipping: '${urlFromAI}' -> '${schemedUrl}'`, e);
-              return null; // Skip this tab if URL is still invalid
+              return null; 
             }
           }).filter(Boolean) as Tab[]
       }));
@@ -142,7 +144,6 @@ export default function DashboardPage() {
 
               suggestion.processedTabs.forEach(aiTabFromSuggestion => {
                   const isOriginallyUngrouped = ungroupedTabs.some(ut => ut.id === aiTabFromSuggestion.id);
-                  // Only add if it's an originally ungrouped tab AND not already in this group
                   if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && isOriginallyUngrouped) {
                       groupToUpdate.tabs.push(aiTabFromSuggestion);
                       currentTabsInGroupSet.add(aiTabFromSuggestion.id); 
@@ -239,7 +240,12 @@ export default function DashboardPage() {
   };
 
   const handleAddTab = (newTab: Omit<Tab, 'id' | 'lastAccessed'>) => {
-    const tabWithId: Tab = { ...newTab, id: `manual-${Date.now()}`, lastAccessed: Date.now() };
+    const tabWithId: Tab = { 
+      ...newTab, 
+      id: `manual-${Date.now()}`, 
+      lastAccessed: Date.now(),
+      faviconUrl: `https://www.google.com/s2/favicons?domain=${new URL(newTab.url).hostname}&sz=32`
+    };
     setTabs(prevTabs => [...prevTabs, tabWithId]);
     toast({ title: t("tabAdded"), description: t("tabAddedDesc", { title: tabWithId.title }) });
   };
@@ -369,168 +375,190 @@ export default function DashboardPage() {
     toast({ title: t("tabMovedToUngrouped"), description: t("tabMovedToUngroupedDesc", { title: tabToMove.title }) });
   };
 
+  const handleAddTabsBatch = useCallback((tabsData: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[]) => {
+    const newTabsWithIds: Tab[] = tabsData.map((tab, index) => {
+        let hostname = 'new-tab';
+        try {
+            hostname = new URL(tab.url).hostname;
+        } catch (e) {
+            console.warn(`Invalid URL in batch: ${tab.url}`);
+        }
+        return {
+            ...tab,
+            id: `imported-${hostname}-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`,
+            lastAccessed: Date.now(),
+            faviconUrl: `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`,
+            isPlaceholder: true,
+        };
+    });
+    setTabs(prevTabs => [...prevTabs, ...newTabsWithIds]);
+    toast({ title: t("tabsImported"), description: t("tabsImportedDesc", { count: newTabsWithIds.length }) });
+  }, [setTabs, toast, t]);
+
   const hasAiGroups = tabGroups.some(g => !g.isCustom);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">{t("tabwiseDashboard")}</h1>
-        <div className="flex flex-wrap gap-2">
-          <AddTabModal onAddTab={handleAddTab} />
-          <CreateGroupModal onCreateGroup={handleCreateCustomGroup} />
+    <DashboardProvider addTabsBatch={handleAddTabsBatch}>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <h1 className="text-3xl font-bold tracking-tight">{t("tabwiseDashboard")}</h1>
+          <div className="flex flex-wrap gap-2">
+            <AddTabModal onAddTab={handleAddTab} />
+            <CreateGroupModal onCreateGroup={handleCreateCustomGroup} />
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-wrap gap-2 p-4 border rounded-lg shadow bg-card">
-        <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI || ungroupedTabs.length === 0}>
-          <Zap className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiSuggesting') : t('aiSuggestGroups')}
-        </Button>
-        <Button onClick={handleSuggestInactiveTabs} disabled={isLoadingAI}>
-          <Lightbulb className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiAnalyzing') : t('aiSuggestCloseTabs')}
-        </Button>
-        {hasAiGroups && (
-           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" disabled={isLoadingAI}>
-                <Trash2 className="mr-2 h-4 w-4" /> {t("deleteAllAIGroups")}
+        <div className="flex flex-wrap gap-2 p-4 border rounded-lg shadow bg-card">
+          <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI || ungroupedTabs.length === 0}>
+            <Zap className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiSuggesting') : t('aiSuggestGroups')}
+          </Button>
+          <Button onClick={handleSuggestInactiveTabs} disabled={isLoadingAI}>
+            <Lightbulb className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiAnalyzing') : t('aiSuggestCloseTabs')}
+          </Button>
+          {hasAiGroups && (
+             <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isLoadingAI}>
+                  <Trash2 className="mr-2 h-4 w-4" /> {t("deleteAllAIGroups")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("areYouSure")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t("deleteAllAIGroupsConfirmation")}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAllGroups} 
+                    className={cn(buttonVariants({ variant: "destructive" }))}
+                  >
+                    {t("yesDeleteAllAIGroups")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+
+        {aiSuggestionError && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>{t("aiSuggestionErrorTitle")}</AlertTitle>
+            <AlertDescription>{aiSuggestionError}</AlertDescription>
+          </Alert>
+        )}
+
+        {isLoadingAI && (
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1,2,3].map(i => (
+                  <Card key={i} className="flex flex-col h-full">
+                      <CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader>
+                      <CardContent className="flex-grow p-4 space-y-2">
+                          <Skeleton className="h-10 w-full" />
+                          <Skeleton className="h-10 w-full" />
+                          <Skeleton className="h-10 w-full" />
+                      </CardContent>
+                      <CardFooter><Skeleton className="h-8 w-1/2 ml-auto" /></CardFooter>
+                  </Card>
+              ))}
+          </div>
+        )}
+
+        {!isLoadingAI && tabGroups.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-semibold mb-4">{t("tabGroups")}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tabGroups.map((group) => (
+                <TabGroup
+                  key={group.id}
+                  group={group}
+                  onRemoveTab={handleRemoveTabFromGroup}
+                  onRemoveGroup={handleRemoveGroup}
+                  onExportGroup={handleExportGroup}
+                  onAddTabToGroup={(groupId) => {
+                      if (ungroupedTabs.length > 0) {
+                          handleAddTabToGroup(groupId, ungroupedTabs[0].id);
+                      } else {
+                          toast({ title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
+                      }
+                  }}
+                  onEditGroupName={handleEditGroupName}
+                  onDropTab={handleDropOnGroup}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {!isLoadingAI && ungroupedTabs.length > 0 && (
+          <div className="mt-8">
+             <Separator className="my-6" />
+            <h2 className="text-2xl font-semibold mb-4">{t("ungroupedTabsCount", { count: ungroupedTabs.length })}</h2>
+             <div 
+                onDragOver={(e) => { e.preventDefault(); setIsUngroupedDragOver(true); }}
+                onDragLeave={() => setIsUngroupedDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsUngroupedDragOver(false);
+                  try {
+                    const dataString = e.dataTransfer.getData('application/json');
+                    if (dataString) {
+                      const draggedTabInfo: DraggedTabInfo = JSON.parse(dataString);
+                      if (draggedTabInfo.tabId && draggedTabInfo.sourceType !== undefined) {
+                         handleDropOnUngroupedArea(draggedTabInfo);
+                      }
+                    }
+                  } catch (err) {
+                    console.error("Failed to parse dropped data on ungrouped area", err);
+                  }
+                }}
+                className={cn(
+                  "space-y-2 p-4 rounded-lg border border-dashed",
+                  isUngroupedDragOver ? "border-primary ring-2 ring-primary bg-primary/10" : "border-muted"
+                )}
+              >
+              {ungroupedTabs.map(tab => (
+                <TabItem 
+                  key={tab.id} 
+                  tab={tab}
+                  sourceInfo={{ type: 'ungrouped' }}
+                  onRemove={(tabId) => {
+                    setTabs(prevTabs => prevTabs.filter(t => t.id !== tabId));
+                    setTabGroups(prevGroups => 
+                      prevGroups.map(group => ({
+                        ...group,
+                        tabs: group.tabs.filter(t => t.id !== tabId)
+                      })).filter(group => group.tabs.length > 0 || group.isCustom) 
+                    );
+                }} />
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {!isLoadingAI && tabGroups.length === 0 && ungroupedTabs.length === 0 && (
+          <div className="text-center py-10">
+            <Layers3 className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-xl font-semibold">{t("noTabsOrGroups")}</h3>
+            <p className="mt-1 text-muted-foreground">
+              {t("noTabsOrGroupsDescription")}
+            </p>
+            <div className="mt-6 flex justify-center gap-2">
+               <AddTabModal onAddTab={handleAddTab} />
+               <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI || ungroupedTabs.length === 0}>
+                  <Zap className="mr-2 h-4 w-4" /> {t('aiSuggestGroups')}
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("areYouSure")}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("deleteAllAIGroupsConfirmation")}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleDeleteAllGroups} 
-                  className={cn(buttonVariants({ variant: "destructive" }))}
-                >
-                  {t("yesDeleteAllAIGroups")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            </div>
+          </div>
         )}
       </div>
-
-      {aiSuggestionError && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>{t("aiSuggestionErrorTitle")}</AlertTitle>
-          <AlertDescription>{aiSuggestionError}</AlertDescription>
-        </Alert>
-      )}
-
-      {isLoadingAI && (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1,2,3].map(i => (
-                <Card key={i} className="flex flex-col h-full">
-                    <CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader>
-                    <CardContent className="flex-grow p-4 space-y-2">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                    </CardContent>
-                    <CardFooter><Skeleton className="h-8 w-1/2 ml-auto" /></CardFooter>
-                </Card>
-            ))}
-        </div>
-      )}
-
-      {!isLoadingAI && tabGroups.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">{t("tabGroups")}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tabGroups.map((group) => (
-              <TabGroup
-                key={group.id}
-                group={group}
-                onRemoveTab={handleRemoveTabFromGroup}
-                onRemoveGroup={handleRemoveGroup}
-                onExportGroup={handleExportGroup}
-                onAddTabToGroup={(groupId) => {
-                    if (ungroupedTabs.length > 0) {
-                        // Attempt to add the first ungrouped tab. A more sophisticated UI might allow choosing.
-                        handleAddTabToGroup(groupId, ungroupedTabs[0].id);
-                    } else {
-                        toast({ title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
-                    }
-                }}
-                onEditGroupName={handleEditGroupName}
-                onDropTab={handleDropOnGroup}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {!isLoadingAI && ungroupedTabs.length > 0 && (
-        <div className="mt-8">
-           <Separator className="my-6" />
-          <h2 className="text-2xl font-semibold mb-4">{t("ungroupedTabsCount", { count: ungroupedTabs.length })}</h2>
-           <div 
-              onDragOver={(e) => { e.preventDefault(); setIsUngroupedDragOver(true); }}
-              onDragLeave={() => setIsUngroupedDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsUngroupedDragOver(false);
-                try {
-                  const dataString = e.dataTransfer.getData('application/json');
-                  if (dataString) {
-                    const draggedTabInfo: DraggedTabInfo = JSON.parse(dataString);
-                    if (draggedTabInfo.tabId && draggedTabInfo.sourceType !== undefined) {
-                       handleDropOnUngroupedArea(draggedTabInfo);
-                    }
-                  }
-                } catch (err) {
-                  console.error("Failed to parse dropped data on ungrouped area", err);
-                }
-              }}
-              className={cn(
-                "space-y-2 p-4 rounded-lg border border-dashed",
-                isUngroupedDragOver ? "border-primary ring-2 ring-primary bg-primary/10" : "border-muted"
-              )}
-            >
-            {ungroupedTabs.map(tab => (
-              <TabItem 
-                key={tab.id} 
-                tab={tab}
-                sourceInfo={{ type: 'ungrouped' }}
-                onRemove={(tabId) => {
-                  setTabs(prevTabs => prevTabs.filter(t => t.id !== tabId));
-                  setTabGroups(prevGroups => 
-                    prevGroups.map(group => ({
-                      ...group,
-                      tabs: group.tabs.filter(t => t.id !== tabId)
-                    })).filter(group => group.tabs.length > 0 || group.isCustom) // Ensure custom groups persist even if empty
-                  );
-              }} />
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {!isLoadingAI && tabGroups.length === 0 && ungroupedTabs.length === 0 && (
-        <div className="text-center py-10">
-          <Layers3 className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-2 text-xl font-semibold">{t("noTabsOrGroups")}</h3>
-          <p className="mt-1 text-muted-foreground">
-            {t("noTabsOrGroupsDescription")}
-          </p>
-          <div className="mt-6 flex justify-center gap-2">
-             <AddTabModal onAddTab={handleAddTab} />
-             <Button onClick={handleSuggestTabGroups} disabled={isLoadingAI || ungroupedTabs.length === 0}>
-                <Zap className="mr-2 h-4 w-4" /> {t('aiSuggestGroups')}
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
+    </DashboardProvider>
   );
 }
 
-
-    
+export default function DashboardPage() {
+    return <DashboardPageContent />;
+}

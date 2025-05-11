@@ -133,5 +133,16 @@
   "cannotOpenTabsFromEmptyGroup": "Cannot open tabs from an empty group.",
   "tabsOpenedTitle": "Tabs Opened",
   "allTabsOpened": "Opened {count} tab(s) from group '{groupName}'.",
-  "openAllTabsInGroupTooltip": "Open all tabs in group '{groupName}'"
+  "openAllTabsInGroupTooltip": "Open all tabs in group '{groupName}'",
+  "importActiveTabsModalTitle": "Import Active Tabs",
+  "importActiveTabsModalDescription": "Paste URLs of your active tabs below, one URL per line. This will add them to your ungrouped tabs.",
+  "urlsInputPlaceholder": "https://example.com/page1\nhttps://another.com/item",
+  "importButton": "Import Tabs",
+  "tabsImported": "Tabs Imported",
+  "tabsImportedDesc": "{count} tabs have been successfully imported.",
+  "invalidUrlsFound": "Invalid URLs Found",
+  "invalidUrlsFoundDesc": "{count} URLs were invalid and could not be imported. Please check the format.",
+  "noUrlsPasted": "No URLs Pasted",
+  "noUrlsPastedDesc": "Please paste some URLs into the text area to import.",
+  "featureNotImplemented": "Feature '{feature}' is not yet implemented."
 }

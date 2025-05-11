@@ -133,5 +133,16 @@
   "cannotOpenTabsFromEmptyGroup": "No se pueden abrir pestañas de un grupo vacío.",
   "tabsOpenedTitle": "Pestañas Abiertas",
   "allTabsOpened": "Se abrieron {count} pestaña(s) del grupo '{groupName}'.",
-  "openAllTabsInGroupTooltip": "Abrir todas las pestañas del grupo '{groupName}'"
+  "openAllTabsInGroupTooltip": "Abrir todas las pestañas del grupo '{groupName}'",
+  "importActiveTabsModalTitle": "Importar Pestañas Activas",
+  "importActiveTabsModalDescription": "Pega las URLs de tus pestañas activas abajo, una URL por línea. Esto las añadirá a tus pestañas no agrupadas.",
+  "urlsInputPlaceholder": "https://ejemplo.com/pagina1\nhttps://otro.com/articulo",
+  "importButton": "Importar Pestañas",
+  "tabsImported": "Pestañas Importadas",
+  "tabsImportedDesc": "{count} pestañas han sido importadas exitosamente.",
+  "invalidUrlsFound": "URLs Inválidas Encontradas",
+  "invalidUrlsFoundDesc": "{count} URLs eran inválidas y no pudieron ser importadas. Por favor, revisa el formato.",
+  "noUrlsPasted": "No se Pegaron URLs",
+  "noUrlsPastedDesc": "Por favor, pega algunas URLs en el área de texto para importar.",
+  "featureNotImplemented": "La función '{feature}' aún no está implementada."
 }

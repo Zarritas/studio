@@ -20,6 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Home, Settings, UploadCloud, Bookmark, LogOut, Layers3 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useTranslation } from '@/lib/i18n';
+import { ImportActiveTabsModal } from '@/components/dashboard/import-active-tabs-modal';
 
 
 export function MainSidebar() {
@@ -32,10 +33,13 @@ export function MainSidebar() {
     { href: '/settings', label: t('settings'), icon: Settings },
   ];
   
-  const importNavItems = [
-    { label: t('importActiveTabs'), icon: UploadCloud, action: () => alert('Import Active Tabs (Not Implemented)') },
-    { label: t('importBookmarks'), icon: Bookmark, action: () => alert('Import Bookmarks (Not Implemented)') },
-  ];
+  // Define importNavItems structure for type consistency if needed,
+  // but direct rendering of ImportActiveTabsModal below is clearer.
+  const bookmarkImportItem = { 
+    label: t('importBookmarks'), 
+    icon: Bookmark, 
+    action: () => alert(t('featureNotImplemented', {feature: t('importBookmarks')})) 
+  };
 
 
   return (
@@ -77,13 +81,20 @@ export function MainSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel>{t('tools', {defaultValue: 'Tools'})}</SidebarGroupLabel>
             <SidebarMenu>
-              {importNavItems.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton onClick={item.action} tooltip={item.label}>
-                    <item.icon /><span>{item.label}</span>
+              <SidebarMenuItem>
+                <ImportActiveTabsModal
+                  triggerButton={
+                    <SidebarMenuButton tooltip={t('importActiveTabs')}>
+                      <UploadCloud /><span>{t('importActiveTabs')}</span>
+                    </SidebarMenuButton>
+                  }
+                />
+              </SidebarMenuItem>
+              <SidebarMenuItem key={bookmarkImportItem.label}>
+                  <SidebarMenuButton onClick={bookmarkImportItem.action} tooltip={bookmarkImportItem.label}>
+                    <bookmarkImportItem.icon /><span>{bookmarkImportItem.label}</span>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
