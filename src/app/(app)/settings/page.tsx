@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/lib/i18n';
+import { KeyRound } from 'lucide-react';
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -25,6 +26,7 @@ export default function SettingsPage() {
   const [autoCloseInactiveTabs, setAutoCloseInactiveTabs] = useState(false);
   const [inactiveThreshold, setInactiveThreshold] = useState(30); // Default to 30 minutes
   const [aiPreferences, setAiPreferences] = useState("");
+  const [geminiApiKey, setGeminiApiKey] = useState("");
 
   // Load non-language settings from localStorage on component mount
   useEffect(() => {
@@ -34,6 +36,7 @@ export default function SettingsPage() {
       setAutoCloseInactiveTabs(settings.autoCloseInactiveTabs ?? false);
       setInactiveThreshold(settings.inactiveThreshold ?? 30);
       setAiPreferences(settings.aiPreferences ?? "");
+      setGeminiApiKey(settings.geminiApiKey ?? "");
     }
   }, []);
 
@@ -42,6 +45,7 @@ export default function SettingsPage() {
       autoCloseInactiveTabs,
       inactiveThreshold,
       aiPreferences,
+      geminiApiKey,
     };
     localStorage.setItem('tabwise_app_settings', JSON.stringify(appSettings));
     // Language is saved by LocaleProvider
@@ -113,6 +117,33 @@ export default function SettingsPage() {
             />
             <p className="text-sm text-muted-foreground mt-1">
               {t("userPreferencesForAIDesc")}
+            </p>
+           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <KeyRound className="h-6 w-6 text-primary" />
+            <div>
+                <CardTitle>{t("apiKeyManagement")}</CardTitle>
+                <CardDescription>{t("apiKeyManagementDesc")}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+           <div>
+            <Label htmlFor="gemini-api-key-input">{t("geminiApiKeyLabel")}</Label>
+            <Input 
+              id="gemini-api-key-input"
+              type="password"
+              placeholder={t("geminiApiKeyPlaceholder")}
+              value={geminiApiKey}
+              onChange={(e) => setGeminiApiKey(e.target.value)}
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              {t("geminiApiKeyDesc")}
             </p>
            </div>
         </CardContent>

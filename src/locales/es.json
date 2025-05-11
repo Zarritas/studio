@@ -1,3 +1,4 @@
+
 {
   "tabwise": "TabWise",
   "settings": "Configuración",
@@ -172,5 +173,10 @@
   "importBookmarksModal.success.title": "Marcadores Importados",
   "importBookmarksModal.success.description": "{count} elemento(s) (marcadores/grupos) importados correctamente.",
   "importBookmarksModal.noSelection.title": "Sin Selección",
-  "importBookmarksModal.noSelection.description": "Por favor, selecciona algunos marcadores o carpetas para importar."
+  "importBookmarksModal.noSelection.description": "Por favor, selecciona algunos marcadores o carpetas para importar.",
+  "apiKeyManagement": "Gestión de Claves API",
+  "apiKeyManagementDesc": "Gestiona tus claves API para los servicios de IA.",
+  "geminiApiKeyLabel": "Clave API de Gemini",
+  "geminiApiKeyPlaceholder": "Introduce tu Clave API de Google Gemini",
+  "geminiApiKeyDesc": "Tu Clave API de Gemini se utilizará para las sugerencias impulsadas por IA. Se almacena localmente en tu navegador."
 }

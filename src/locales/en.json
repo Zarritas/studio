@@ -1,3 +1,4 @@
+
 {
   "tabwise": "TabWise",
   "settings": "Settings",
@@ -172,5 +173,10 @@
   "importBookmarksModal.success.title": "Bookmarks Imported",
   "importBookmarksModal.success.description": "{count} item(s) (bookmarks/groups) imported successfully.",
   "importBookmarksModal.noSelection.title": "No Selection",
-  "importBookmarksModal.noSelection.description": "Please select some bookmarks or folders to import."
+  "importBookmarksModal.noSelection.description": "Please select some bookmarks or folders to import.",
+  "apiKeyManagement": "API Key Management",
+  "apiKeyManagementDesc": "Manage your API keys for AI services.",
+  "geminiApiKeyLabel": "Gemini API Key",
+  "geminiApiKeyPlaceholder": "Enter your Google Gemini API Key",
+  "geminiApiKeyDesc": "Your Gemini API Key will be used for AI-powered suggestions. It is stored locally in your browser."
 }
