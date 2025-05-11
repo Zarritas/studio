@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -87,19 +86,19 @@ function DashboardPageContent() {
     }
   }, [currentUser, authLoading, toast, t]);
 
-  const persistTabs = async (newTabs: Tab[]) => {
+  const persistTabs = useCallback(async (newTabs: Tab[]) => {
     if (currentUser) {
       await saveUserTabs(currentUser.uid, newTabs);
     }
-  };
+  }, [currentUser]);
 
-  const persistTabGroups = async (newTabGroups: TabGroupType[]) => {
+  const persistTabGroups = useCallback(async (newTabGroups: TabGroupType[]) => {
     if (currentUser) {
       await saveUserTabGroups(currentUser.uid, newTabGroups);
     }
-  };
+  }, [currentUser]);
   
-  const persistTabsAndGroups = async (newTabs: Tab[], newTabGroups: TabGroupType[]) => {
+  const persistTabsAndGroups = useCallback(async (newTabs: Tab[], newTabGroups: TabGroupType[]) => {
     if (currentUser) {
         const successTabs = await saveUserTabs(currentUser.uid, newTabs);
         const successGroups = await saveUserTabGroups(currentUser.uid, newTabGroups);
@@ -107,7 +106,7 @@ function DashboardPageContent() {
             toast({ title: t("error"), description: "Failed to save some changes.", variant: "destructive"});
         }
     }
-  }
+  }, [currentUser, toast, t]);
 
 
   const handleSuggestTabGroups = async () => {
@@ -141,7 +140,7 @@ function DashboardPageContent() {
       const suggestedGroupsOutput: SuggestTabGroupsOutput = await suggestTabGroups(input);
       
       let nextTabGroupsState = [...tabGroups];
-      let nextTabsState = [...tabs]; // Keep track of tabs if AI adds new ones (currently it doesn't directly)
+      let nextTabsState = [...tabs]; 
       let newGroupsCreatedCount = 0;
       let groupsUpdatedCount = 0;
 
@@ -158,9 +157,6 @@ function DashboardPageContent() {
             const existingTab = nextTabsState.find(t => t.url === urlFromAI || t.url === schemedUrl);
             if (existingTab) return existingTab;
       
-            // AI currently should only work with existing ungrouped tabs
-            // If AI suggests a tab that doesn't exist in ungrouped, we ignore it for now, or log warning
-            // For this iteration, AI works with existing ungrouped tab URLs.
             console.warn(`AI suggested a tab URL not found in current tabs: ${urlFromAI}`);
             return null; 
           }).filter(Boolean) as Tab[]
@@ -492,7 +488,7 @@ function DashboardPageContent() {
     });
     const updatedTabs = [...tabs, ...newTabsWithIds];
     setTabs(updatedTabs);
-    await persistTabs(updatedTabs);
+    await persistTabs(updatedTabs); // persistTabs is now memoized
     toast({ title: t("tabsImported"), description: t("tabsImportedDesc", { count: newTabsWithIds.length }) });
   }, [currentUser, tabs, persistTabs, toast, t]);
 
@@ -538,7 +534,7 @@ function DashboardPageContent() {
     const updatedGroups = [...tabGroups, ...newGroups];
     setTabs(updatedTabs);
     setTabGroups(updatedGroups);
-    await persistTabsAndGroups(updatedTabs, updatedGroups);
+    await persistTabsAndGroups(updatedTabs, updatedGroups); // persistTabsAndGroups is now memoized
 
     toast({ title: t("groupsImported"), description: t("groupsImportedDesc", { count: newGroups.length }) });
   }, [currentUser, tabs, tabGroups, persistTabsAndGroups, toast, t]);
@@ -593,7 +589,7 @@ function DashboardPageContent() {
             <AlertTriangle className="h-12 w-12 text-destructive" />
             <p className="mt-4 text-lg text-destructive">{t('authRequiredToViewDashboard', {defaultValue: "Please log in to view your dashboard."})}</p>
             <Button asChild className="mt-4">
-                <Link href="/login">{t('goToLogin', {defaultValue: "Go to Login"})}</Link>
+                <Link href="/login">{t('goToLogin', {defaultValue: "Go to Login"})</Link>
             </Button>
         </div>
     );

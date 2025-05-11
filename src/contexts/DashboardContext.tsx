@@ -1,8 +1,7 @@
-
 "use client";
 import type { Tab } from '@/types';
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useRef, useCallback } from 'react';
 
 // Functions will be implemented in DashboardPage and registered here.
 // They will have access to currentUser from DashboardPage's scope.
@@ -10,9 +9,9 @@ type AddTabsBatchFn = (tabsData: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' 
 type CreateGroupsWithTabsBatchFn = (groupsData: { name: string, tabs: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[] }[]) => Promise<void>;
 
 interface DashboardContextType {
-  addTabsBatch: AddTabsBatchFn | null;
+  addTabsBatch: AddTabsBatchFn; // Changed to non-nullable, will provide a stable caller
   registerAddTabsBatch: (fn: AddTabsBatchFn | null) => void;
-  createGroupsWithTabsBatch: CreateGroupsWithTabsBatchFn | null;
+  createGroupsWithTabsBatch: CreateGroupsWithTabsBatchFn; // Changed to non-nullable
   registerCreateGroupsWithTabsBatch: (fn: CreateGroupsWithTabsBatchFn | null) => void;
 }
 
@@ -27,22 +26,43 @@ export function useDashboardContext() {
 }
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
-  const [addTabsBatchFn, setAddTabsBatchFn] = useState<AddTabsBatchFn | null>(null);
-  const [createGroupsWithTabsBatchFn, setCreateGroupsWithTabsBatchFn] = useState<CreateGroupsWithTabsBatchFn | null>(null);
+  const addTabsBatchFnRef = useRef<AddTabsBatchFn | null>(null);
+  const createGroupsWithTabsBatchFnRef = useRef<CreateGroupsWithTabsBatchFn | null>(null);
 
   const registerAddTabsBatch = useCallback((fn: AddTabsBatchFn | null) => {
-    setAddTabsBatchFn(() => fn); // Pass async function
-  }, []);
+    addTabsBatchFnRef.current = fn;
+  }, []); // Empty dependency array ensures this function is stable
 
   const registerCreateGroupsWithTabsBatch = useCallback((fn: CreateGroupsWithTabsBatchFn | null) => {
-    setCreateGroupsWithTabsBatchFn(() => fn); // Pass async function
-  }, []);
+    createGroupsWithTabsBatchFnRef.current = fn;
+  }, []); // Empty dependency array ensures this function is stable
+
+  // Stable caller function for addTabsBatch
+  const callAddTabsBatch: AddTabsBatchFn = useCallback(async (tabsData) => {
+    if (addTabsBatchFnRef.current) {
+      await addTabsBatchFnRef.current(tabsData);
+    } else {
+      console.warn('addTabsBatch function not registered in DashboardContext');
+      // Optionally, return a rejected promise or throw an error
+      // return Promise.reject(new Error('addTabsBatch function not registered'));
+    }
+  }, []); // Empty dependency array ensures this function is stable
+
+  // Stable caller function for createGroupsWithTabsBatch
+  const callCreateGroupsWithTabsBatch: CreateGroupsWithTabsBatchFn = useCallback(async (groupsData) => {
+    if (createGroupsWithTabsBatchFnRef.current) {
+      await createGroupsWithTabsBatchFnRef.current(groupsData);
+    } else {
+      console.warn('createGroupsWithTabsBatch function not registered in DashboardContext');
+      // Optionally, return a rejected promise or throw an error
+    }
+  }, []); // Empty dependency array ensures this function is stable
 
   return (
     <DashboardContext.Provider value={{ 
-      addTabsBatch: addTabsBatchFn, 
+      addTabsBatch: callAddTabsBatch, 
       registerAddTabsBatch,
-      createGroupsWithTabsBatch: createGroupsWithTabsBatchFn,
+      createGroupsWithTabsBatch: callCreateGroupsWithTabsBatch,
       registerCreateGroupsWithTabsBatch
     }}>
       {children}
