@@ -184,7 +184,12 @@
   "apiKeyRequiredTooltip": "Se necesita Clave API de Gemini para funciones de IA.",
   "goToSettings": "Ir a Configuración",
   "checkingApiKey": "Verificando Clave API...",
-  "checkingApiKeyDesc": "Por favor, espera mientras verificamos la configuración de tu clave API."
+  "checkingApiKeyDesc": "Por favor, espera mientras verificamos la configuración de tu clave API.",
+  "apiKeyVerifiedTitle": "Clave API Verificada",
+  "apiKeyVerifiedDesc": "Tu Clave API de Gemini es válida.",
+  "apiKeyInvalidTitle": "Clave API Inválida",
+  "apiKeyInvalidDesc": "La clave API no pudo ser verificada. Por favor, revísala e inténtalo de nuevo. El resto de la configuración fue guardada.",
+  "apiKeyVerificationErrorTitle": "Error de Verificación de Clave API",
+  "apiKeyVerificationErrorDesc": "Ocurrió un error al verificar la clave API. Por favor, inténtalo de nuevo. El resto de la configuración fue guardada.",
+  "verifyingApiKeyButtonText": "Verificando..."
 }
-
-```

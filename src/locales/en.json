@@ -184,7 +184,12 @@
   "apiKeyRequiredTooltip": "Gemini API Key needed for AI features.",
   "goToSettings": "Go to Settings",
   "checkingApiKey": "Checking API Key...",
-  "checkingApiKeyDesc": "Please wait while we check your API key configuration."
+  "checkingApiKeyDesc": "Please wait while we check your API key configuration.",
+  "apiKeyVerifiedTitle": "API Key Verified",
+  "apiKeyVerifiedDesc": "Your Gemini API Key is valid.",
+  "apiKeyInvalidTitle": "Invalid API Key",
+  "apiKeyInvalidDesc": "The API key could not be verified. Please check it and try again. Other settings were saved.",
+  "apiKeyVerificationErrorTitle": "API Key Verification Error",
+  "apiKeyVerificationErrorDesc": "An error occurred while verifying the API key. Please try again. Other settings were saved.",
+  "verifyingApiKeyButtonText": "Verifying..."
 }
-
-```

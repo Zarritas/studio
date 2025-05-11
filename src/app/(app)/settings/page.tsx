@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/lib/i18n';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, Loader2 } from 'lucide-react';
+import { validateApiKey } from '@/ai/flows/validate-api-key-flow';
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -27,6 +28,8 @@ export default function SettingsPage() {
   const [inactiveThreshold, setInactiveThreshold] = useState(30); // Default to 30 minutes
   const [aiPreferences, setAiPreferences] = useState("");
   const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [initialGeminiApiKey, setInitialGeminiApiKey] = useState(""); // Store initially loaded key
+  const [isVerifyingApiKey, setIsVerifyingApiKey] = useState(false);
 
   // Load non-language settings from localStorage on component mount
   useEffect(() => {
@@ -37,22 +40,71 @@ export default function SettingsPage() {
       setInactiveThreshold(settings.inactiveThreshold ?? 30);
       setAiPreferences(settings.aiPreferences ?? "");
       setGeminiApiKey(settings.geminiApiKey ?? "");
+      setInitialGeminiApiKey(settings.geminiApiKey ?? "");
     }
   }, []);
 
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
+    let apiKeyToSaveInStorage = initialGeminiApiKey;
+    let newApiKeySuccessfullyVerified = false;
+
+    if (geminiApiKey && geminiApiKey !== initialGeminiApiKey) { // Key is present and changed
+      setIsVerifyingApiKey(true);
+      try {
+        const validationResult = await validateApiKey({ apiKey: geminiApiKey });
+        if (validationResult.isValid) {
+          apiKeyToSaveInStorage = geminiApiKey; // API key is valid, prepare to save it
+          newApiKeySuccessfullyVerified = true;
+          toast({
+            title: t("apiKeyVerifiedTitle"),
+            description: t("apiKeyVerifiedDesc"),
+            variant: "default", 
+          });
+        } else {
+          // API key is invalid, show error, do not update apiKeyToSaveInStorage from initialGeminiApiKey
+          toast({
+            title: t("apiKeyInvalidTitle"),
+            description: validationResult.error || t("apiKeyInvalidDesc"),
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        // Error during the validation call itself
+        toast({
+          title: t("apiKeyVerificationErrorTitle"),
+          description: (error as Error).message || t("apiKeyVerificationErrorDesc"),
+          variant: "destructive",
+        });
+        // Do not update apiKeyToSaveInStorage from initialGeminiApiKey
+      } finally {
+        setIsVerifyingApiKey(false);
+      }
+    } else if (!geminiApiKey && geminiApiKey !== initialGeminiApiKey) { // Key was cleared by the user
+      apiKeyToSaveInStorage = ""; // Save an empty string for the key
+    } else { // Key is unchanged or was initially empty and remains empty
+       apiKeyToSaveInStorage = geminiApiKey; // Keep current state (could be empty or initial key)
+    }
+    
     const appSettings = {
       autoCloseInactiveTabs,
       inactiveThreshold,
       aiPreferences,
-      geminiApiKey,
+      geminiApiKey: apiKeyToSaveInStorage, // Save the determined API key
     };
     localStorage.setItem('tabwise_app_settings', JSON.stringify(appSettings));
-    // Language is saved by LocaleProvider
-    toast({
-      title: t("settingsSaved"),
-      description: t("settingsSavedDesc"),
-    });
+
+    // Update initialGeminiApiKey if a new key was successfully verified and saved, or if it was cleared.
+    if (newApiKeySuccessfullyVerified || apiKeyToSaveInStorage !== initialGeminiApiKey) {
+      setInitialGeminiApiKey(apiKeyToSaveInStorage);
+    }
+    
+    // General "settings saved" toast (if API key was invalid, this toast follows the invalid key toast)
+    if (!geminiApiKey || geminiApiKey === initialGeminiApiKey || newApiKeySuccessfullyVerified) {
+        toast({
+            title: t("settingsSaved"),
+            description: t("settingsSavedDesc"),
+        });
+    }
   };
 
   return (
@@ -76,6 +128,7 @@ export default function SettingsPage() {
               id="auto-close-tabs"
               checked={autoCloseInactiveTabs}
               onCheckedChange={setAutoCloseInactiveTabs}
+              disabled={isVerifyingApiKey}
             />
           </div>
           
@@ -92,6 +145,7 @@ export default function SettingsPage() {
                 value={[inactiveThreshold]}
                 onValueChange={(value) => setInactiveThreshold(value[0])}
                 className="my-2"
+                disabled={isVerifyingApiKey}
               />
               <p className="text-sm text-muted-foreground">
                 {t("inactiveThresholdDesc")}
@@ -114,6 +168,7 @@ export default function SettingsPage() {
               placeholder={t("userPreferencesForAIPlaceholder")}
               value={aiPreferences}
               onChange={(e) => setAiPreferences(e.target.value)}
+              disabled={isVerifyingApiKey}
             />
             <p className="text-sm text-muted-foreground mt-1">
               {t("userPreferencesForAIDesc")}
@@ -141,6 +196,7 @@ export default function SettingsPage() {
               placeholder={t("geminiApiKeyPlaceholder")}
               value={geminiApiKey}
               onChange={(e) => setGeminiApiKey(e.target.value)}
+              disabled={isVerifyingApiKey}
             />
             <p className="text-sm text-muted-foreground mt-1">
               {t("geminiApiKeyDesc")}
@@ -157,7 +213,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="language-select">{t("language")}</Label>
-            <Select value={locale} onValueChange={setLocale}>
+            <Select value={locale} onValueChange={setLocale} disabled={isVerifyingApiKey}>
               <SelectTrigger id="language-select" className="w-[180px]">
                 <SelectValue placeholder={t("selectLanguage")} />
               </SelectTrigger>
@@ -174,7 +230,10 @@ export default function SettingsPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={handleSaveSettings}>{t("saveSettings")}</Button>
+        <Button onClick={handleSaveSettings} disabled={isVerifyingApiKey}>
+          {isVerifyingApiKey && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isVerifyingApiKey ? t("verifyingApiKeyButtonText", { defaultValue: "Verifying..."}) : t("saveSettings")}
+        </Button>
       </div>
     </div>
   );
