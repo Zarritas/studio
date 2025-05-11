@@ -4,16 +4,16 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/lib/hooks/use-auth';
-import { ChromeIcon } from 'lucide-react'; // Using ChromeIcon as a stand-in for Google G icon
+import { ChromeIcon, Loader2 } from 'lucide-react'; 
 import { useTranslation } from '@/lib/i18n';
 
 export function LoginForm() {
-  const { login } = useAuth();
+  const { login: attemptLogin, isLoading: authIsLoading } = useAuth(); // Renamed to avoid conflict
   const { t } = useTranslation();
 
-  const handleGoogleLogin = () => {
-    // In a real app, you'd initiate the Google OAuth flow here
-    login(); // Mock login
+  const handleGoogleLogin = async () => {
+    if (authIsLoading) return;
+    await attemptLogin(); // This now calls the Firebase signInWithPopup via AuthProvider
   };
 
   return (
@@ -24,12 +24,22 @@ export function LoginForm() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <Button onClick={handleGoogleLogin} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-6">
-            <ChromeIcon className="mr-2 h-5 w-5" /> {t('signInWithGoogle')}
+          <Button 
+            onClick={handleGoogleLogin} 
+            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-lg py-6"
+            disabled={authIsLoading}
+          >
+            {authIsLoading ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <ChromeIcon className="mr-2 h-5 w-5" />
+            )}
+            {t('signInWithGoogle')}
           </Button>
         </div>
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          {t('mockSignInInfo')}
+          {/* Inform users about real sign-in or keep mock info if that's intended for some phase */}
+          {t('firebaseSignInInfo', {defaultValue: "Uses Google's secure sign-in. Your data is safe."})}
         </p>
       </CardContent>
     </Card>

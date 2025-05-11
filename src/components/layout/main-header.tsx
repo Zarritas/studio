@@ -20,9 +20,16 @@ import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/i18n';
 
 export function MainHeader() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, currentUser } = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return "TW";
+    const names = name.split(' ');
+    if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
+    return (names[0][0] + (names[names.length - 1][0] || '')).toUpperCase();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -35,22 +42,22 @@ export function MainHeader() {
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
           <ThemeToggle />
-          {isAuthenticated && (
+          {isAuthenticated && currentUser && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src="https://picsum.photos/40/40?grayscale" alt={t('userAvatar')} data-ai-hint="user avatar" />
-                    <AvatarFallback>TW</AvatarFallback>
+                    <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || t('userAvatar')} data-ai-hint="user avatar" />
+                    <AvatarFallback>{getInitials(currentUser.displayName)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{t('tabwiseUser')}</p>
+                    <p className="text-sm font-medium leading-none">{currentUser.displayName || t('tabwiseUser')}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {t('userEmail')}
+                      {currentUser.email || t('userEmail')}
                     </p>
                   </div>
                 </DropdownMenuLabel>
