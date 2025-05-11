@@ -92,8 +92,8 @@ const SidebarProvider = React.forwardRef<
     // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
       return isMobile
-        ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open)
+        ? setOpenMobile((openMobileState) => !openMobileState)
+        : setOpen((openState) => !openState)
     }, [isMobile, setOpen, setOpenMobile])
 
     // Adds a keyboard shortcut to toggle the sidebar.
@@ -571,20 +571,23 @@ const SidebarMenuButton = React.forwardRef<
       return button
     }
 
-    if (typeof tooltip === "string") {
-      tooltip = {
-        children: tooltip,
-      }
-    }
+    // Prepare tooltip props for TooltipContent, avoiding prop mutation.
+    const baseTooltipProps = {
+      side: "right" as const,
+      align: "center" as const,
+    };
+
+    const tooltipContentActualProps =
+      typeof tooltip === "string"
+        ? { ...baseTooltipProps, children: tooltip }
+        : { ...baseTooltipProps, ...tooltip };
 
     return (
       <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent
-          side="right"
-          align="center"
-          hidden={state !== "collapsed" || isMobile}
-          {...tooltip}
+          {...tooltipContentActualProps}
+          hidden={state !== "collapsed" || isMobile} // This overrides 'hidden' from tooltipContentActualProps
         />
       </Tooltip>
     )
