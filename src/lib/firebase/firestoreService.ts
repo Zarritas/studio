@@ -1,8 +1,9 @@
 
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, deleteField, collection, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, DocumentSnapshot } from 'firebase/firestore';
 import { db } from './client';
 import type { Tab, TabGroup } from '@/types';
 import type { UserSettings } from '@/types/settings';
+import { withFirestoreWriteRetry, withFirestoreReadRetry } from './retryHelper';
 
 const USER_PROFILES_COLLECTION = 'userProfiles';
 
@@ -17,12 +18,13 @@ export const getUserProfile = async (userId: string): Promise<UserProfileData | 
   if (!userId) return null;
   try {
     const userProfileRef = doc(db, USER_PROFILES_COLLECTION, userId);
-    const docSnap = await getDoc(userProfileRef);
+    // Retry for getDoc
+    const docSnap = await withFirestoreReadRetry<DocumentSnapshot>(() => getDoc(userProfileRef));
+
     if (docSnap.exists()) {
       return docSnap.data() as UserProfileData;
     } else {
-      // console.log("No such user profile document!");
-      // Optionally create a default profile here if one doesn't exist
+      // console.log("No such user profile document! Creating default.");
       const defaultProfile: UserProfileData = {
         tabs: [],
         tabGroups: [],
@@ -31,15 +33,16 @@ export const getUserProfile = async (userId: string): Promise<UserProfileData | 
           autoCloseInactiveTabs: false,
           inactiveThreshold: 30,
           aiPreferences: '',
-          locale: 'en', // Default locale
+          locale: 'en', 
           theme: 'system',
         }
       };
-      await setDoc(userProfileRef, defaultProfile);
+      // Retry for setDoc (creating default profile)
+      await withFirestoreWriteRetry(() => setDoc(userProfileRef, defaultProfile));
       return defaultProfile;
     }
   } catch (error) {
-    console.error("Error getting user profile:", error);
+    console.error("Error in getUserProfile (final error after retries):", error);
     return null;
   }
 };
@@ -49,10 +52,10 @@ export const updateUserProfile = async (userId: string, data: Partial<UserProfil
   if (!userId) return false;
   try {
     const userProfileRef = doc(db, USER_PROFILES_COLLECTION, userId);
-    await setDoc(userProfileRef, data, { merge: true }); // Use set with merge to create or update
+    await withFirestoreWriteRetry(() => setDoc(userProfileRef, data, { merge: true }));
     return true;
   } catch (error) {
-    console.error("Error updating user profile:", error);
+    console.error("Error updating user profile (final error after retries):", error);
     return false;
   }
 };
@@ -75,24 +78,24 @@ export const saveUserSettings = async (userId: string, settings: UserSettings): 
   return updateUserProfile(userId, { settings });
 };
 
-// Example: Add a single tab (more granular control if needed)
+// Example: Add a single tab
 export const addTabToUserProfile = async (userId: string, tab: Tab): Promise<boolean> => {
     if (!userId) return false;
+    const userProfileRef = doc(db, USER_PROFILES_COLLECTION, userId);
     try {
-        const userProfileRef = doc(db, USER_PROFILES_COLLECTION, userId);
-        await updateDoc(userProfileRef, {
+        // Attempt updateDoc with retry
+        await withFirestoreWriteRetry(() => updateDoc(userProfileRef, {
             tabs: arrayUnion(tab)
-        });
+        }));
         return true;
     } catch (error) {
-        console.error("Error adding tab to user profile:", error);
-        // If the document or field doesn't exist, arrayUnion might fail. 
-        // Consider setDoc with merge:true as a fallback or ensure profile exists.
+        console.warn("Failed to updateDoc (arrayUnion), trying setDoc with merge (final error for updateDoc after retries):", error);
+        // Fallback to setDoc with merge, also with retry
         try {
-            await setDoc(userProfileRef, { tabs: [tab] }, { merge: true });
+            await withFirestoreWriteRetry(() => setDoc(userProfileRef, { tabs: arrayUnion(tab) }, { merge: true }));
             return true;
         } catch (fallbackError) {
-            console.error("Error setting tab in user profile (fallback):", fallbackError);
+            console.error("Error setting tab in user profile using setDoc fallback (final error after retries):", fallbackError);
             return false;
         }
     }
@@ -105,7 +108,7 @@ export const removeTabFromUserProfile = async (userId: string, tabId: string): P
     // It's often easier to fetch, filter, and then saveUserTabs.
     // For a direct arrayRemove, you'd need the full tab object that was stored.
     // For now, let's assume the main page handles the state and calls saveUserTabs.
-    console.warn("removeTabFromUserProfile is a placeholder. Full array update via saveUserTabs is preferred for simplicity.");
+    console.warn("removeTabFromUserProfile is a placeholder. Full array update via saveUserTabs is preferred for simplicity with retries handled there.");
     return false;
 };
 
@@ -126,10 +129,10 @@ export const resetUserData = async (userId: string): Promise<boolean> => {
         theme: 'system',
       }
     };
-    await setDoc(userProfileRef, defaultProfile);
+    await withFirestoreWriteRetry(() => setDoc(userProfileRef, defaultProfile));
     return true;
   } catch (error) {
-    console.error("Error resetting user data:", error);
+    console.error("Error resetting user data (final error after retries):", error);
     return false;
   }
 };
