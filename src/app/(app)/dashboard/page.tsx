@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -35,8 +36,26 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { getUserProfile, saveUserTabs, saveUserTabGroups, UserProfileData } from '@/lib/firebase/firestoreService';
 import type { UserSettings } from '@/types/settings';
 
+
 // Example initial tabs are now removed, will be loaded from Firestore
-// const initialTabs: Tab[] = [ ... ];
+const exampleInitialTabs: Tab[] = [
+  { id: '1', title: 'Next.js Docs', url: 'https://nextjs.org/docs', faviconUrl: 'https://nextjs.org/favicon.ico', lastAccessed: Date.now() - 3600000 * 2 }, // 2 hours ago
+  { id: '2', title: 'Tailwind CSS', url: 'https://tailwindcss.com/docs/installation', faviconUrl: 'https://tailwindcss.com/favicons/favicon.ico', lastAccessed: Date.now() - 3600000 * 5 }, // 5 hours ago
+  { id: '3', title: 'ShadCN UI', url: 'https://ui.shadcn.com/docs/components/button', faviconUrl: 'https://ui.shadcn.com/favicon.ico', lastAccessed: Date.now() - 86400000 * 1 }, // 1 day ago
+  { id: '4', title: 'Lucide Icons', url: 'https://lucide.dev/icons/', faviconUrl: 'https://lucide.dev/favicon.ico', lastAccessed: Date.now() - 86400000 * 3 }, // 3 days ago
+  { id: '5', title: 'React Hook Form', url: 'https://react-hook-form.com/get-started', faviconUrl: 'https://react-hook-form.com/favicon.png', lastAccessed: Date.now() - 3600000 * 8 }, // 8 hours ago
+  { id: '6', title: 'Zod Documentation', url: 'https://zod.dev/?id=introduction', faviconUrl: 'https://zod.dev/logo.svg', lastAccessed: Date.now() - 86400000 * 2 }, // 2 days ago
+  { id: '7', title: 'Genkit AI Docs', url: 'https://firebase.google.com/docs/genkit', faviconUrl: 'https://firebase.google.com/favicon.ico', lastAccessed: Date.now() - 3600000 * 1 }, // 1 hour ago
+  { id: '8', title: 'Firebase Console', url: 'https://console.firebase.google.com/', faviconUrl: 'https://firebase.google.com/favicon.ico', lastAccessed: Date.now() - 3600000 * 0.5 }, // 30 mins ago
+  { id: '9', title: 'GitHub', url: 'https://github.com', faviconUrl: 'https://github.githubassets.com/favicons/favicon.svg', lastAccessed: Date.now() - 86400000 * 7 }, // 7 days ago
+  { id: '10', title: 'MDN Web Docs - CSS', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS', faviconUrl: 'https://developer.mozilla.org/favicon.ico', lastAccessed: Date.now() - 3600000 * 24 }, // 1 day ago
+  { id: '11', title: 'Stack Overflow - React', url: 'https://stackoverflow.com/questions/tagged/reactjs', faviconUrl: 'https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico', lastAccessed: Date.now() - 3600000 * 4 }, // 4 hours ago
+  { id: '12', title: 'Coolors - Color Palette Generator', url: 'https://coolors.co/', faviconUrl: 'https://coolors.co/assets/img/favicon.png', lastAccessed: Date.now() - 86400000 * 5 }, // 5 days ago
+  { id: '13', title: 'Unsplash - Free Images', url: 'https://unsplash.com/', faviconUrl: 'https://unsplash.com/favicon.ico', lastAccessed: Date.now() - 3600000 * 12 }, // 12 hours ago
+  { id: '14', title: 'Figma Community', url: 'https://www.figma.com/community', faviconUrl: 'https://static.figma.com/app/icon/1/favicon.png', lastAccessed: Date.now() - 86400000 * 1.5 }, // 1.5 days ago
+  { id: '15', title: 'Canva - Graphic Design', url: 'https://www.canva.com/', faviconUrl: 'https://www.canva.com/favicon.ico', lastAccessed: Date.now() - 3600000 * 6 }, // 6 hours ago
+];
+
 
 function DashboardPageContent() {
   const { currentUser, isLoading: authLoading } = useAuth();
@@ -61,14 +80,23 @@ function DashboardPageContent() {
       getUserProfile(currentUser.uid)
         .then(profile => {
           if (profile) {
-            setTabs(profile.tabs || []);
+            // Use exampleInitialTabs only if Firestore has no tabs and it's a new-like user (no settings or specific flag)
+            const useExampleData = (!profile.tabs || profile.tabs.length === 0) && (!profile.settings?.geminiApiKey); // Simple check for "new-ish" user
+            
+            setTabs(useExampleData ? exampleInitialTabs : (profile.tabs || []));
             setTabGroups(profile.tabGroups || []);
             setUserSettings(profile.settings || null);
+
+             if (useExampleData) {
+              // Persist example tabs for this new user
+              saveUserTabs(currentUser.uid, exampleInitialTabs);
+            }
           } else {
-            // New user or error, set empty state
-            setTabs([]);
+            // New user or error, set empty state or example tabs
+            setTabs(exampleInitialTabs); // Provide examples for a brand new user
             setTabGroups([]);
             setUserSettings(null);
+            saveUserTabs(currentUser.uid, exampleInitialTabs); // Persist example tabs for new user
           }
           setIsLoadingData(false);
         })
@@ -157,8 +185,23 @@ function DashboardPageContent() {
             const existingTab = nextTabsState.find(t => t.url === urlFromAI || t.url === schemedUrl);
             if (existingTab) return existingTab;
       
-            console.warn(`AI suggested a tab URL not found in current tabs: ${urlFromAI}`);
-            return null; 
+            console.warn(`AI suggested a tab URL not found in current tabs: ${urlFromAI}, schemed as: ${schemedUrl}`);
+            // If AI suggests a URL not in the list, we might want to create a placeholder tab
+            // or ignore it. For now, let's create a placeholder if a valid URL.
+            try {
+              const newUrl = new URL(schemedUrl); // Validate schemedUrl
+              return { 
+                id: `ai-new-tab-${newUrl.hostname}-${Date.now()}-${index}`, 
+                title: newUrl.hostname, 
+                url: schemedUrl, 
+                lastAccessed: Date.now(),
+                faviconUrl: `https://www.google.com/s2/favicons?domain=${newUrl.hostname}&sz=32`,
+                isPlaceholder: true,
+              } as Tab;
+            } catch (e) {
+              console.error(`Invalid URL suggested by AI and could not be created: ${urlFromAI} (schemed: ${schemedUrl})`, e);
+              return null;
+            }
           }).filter(Boolean) as Tab[]
       }));
       
@@ -172,22 +215,30 @@ function DashboardPageContent() {
               let actuallyAddedNewTabsToThisGroup = false;
 
               suggestion.processedTabs.forEach(aiTabFromSuggestion => {
-                  const isOriginallyUngrouped = ungroupedTabs.some(ut => ut.id === aiTabFromSuggestion.id);
+                  const isOriginallyUngrouped = ungroupedTabs.some(ut => ut.id === aiTabFromSuggestion.id) || aiTabFromSuggestion.isPlaceholder;
                   if (!currentTabsInGroupSet.has(aiTabFromSuggestion.id) && isOriginallyUngrouped) {
                       groupToUpdate.tabs.push(aiTabFromSuggestion);
                       currentTabsInGroupSet.add(aiTabFromSuggestion.id); 
+                      if(aiTabFromSuggestion.isPlaceholder && !nextTabsState.some(t => t.id === aiTabFromSuggestion.id)) {
+                        nextTabsState.push(aiTabFromSuggestion); // Add to global tabs list if it's new
+                      }
                       actuallyAddedNewTabsToThisGroup = true;
                   }
               });
               if (actuallyAddedNewTabsToThisGroup) groupsUpdatedCount++;
           } else { 
-              const newGroupTabs = suggestion.processedTabs.filter(t => ungroupedTabs.some(ut => ut.id === t.id));
+              const newGroupTabs = suggestion.processedTabs.filter(t => ungroupedTabs.some(ut => ut.id === t.id) || t.isPlaceholder);
               if (newGroupTabs.length > 0) { 
                 nextTabGroupsState.push({
                     id: `ai-group-${Date.now()}-${suggestion.groupName.replace(/\s+/g, '-')}`,
                     name: suggestion.groupName, 
                     tabs: newGroupTabs,
                     isCustom: false,
+                });
+                newGroupTabs.forEach(nt => {
+                  if(nt.isPlaceholder && !nextTabsState.some(t => t.id === nt.id)) {
+                    nextTabsState.push(nt); // Add to global tabs list if it's new
+                  }
                 });
                 newGroupsCreatedCount++;
               }
@@ -196,8 +247,10 @@ function DashboardPageContent() {
       
       const finalTabGroups = nextTabGroupsState.filter(g => g.tabs.length > 0 || g.isCustom);
       setTabGroups(finalTabGroups);
+      setTabs(nextTabsState); // Update global tabs if new placeholders were added
+
       if (currentUser) {
-        await persistTabGroups(finalTabGroups);
+        await persistTabsAndGroups(nextTabsState, finalTabGroups);
       }
       
       let toastMessage = "";
@@ -329,7 +382,7 @@ function DashboardPageContent() {
         group.id === groupId
           ? { ...group, tabs: group.tabs.filter(tab => tab.id !== tabId) }
           : group
-      ).filter(g => g.tabs.length > 0 || g.isCustom);
+      ).filter(g => g.tabs.length > 0 || g.isCustom); // Keep custom groups even if empty
     setTabGroups(updatedGroups);
     if (currentUser) {
       await persistTabGroups(updatedGroups);
@@ -438,7 +491,7 @@ function DashboardPageContent() {
     if (currentUser) {
       await persistTabGroups(finalGroups);
     }
-    toast({ title: t("tabMoved"), description: t("tabMovedDesc", { title: tabToMove.title, groupName: tabGroups.find(g=>g.id === targetGroupId)?.name || 'target group'}) });
+    toast({ title: t("tabMoved"), description: t("tabMovedDesc", { title: tabToMove.title, groupName: newGroups.find(g=>g.id === targetGroupId)?.name || 'target group'}) });
   };
 
   const handleDropOnUngroupedArea = async (draggedTabInfo: DraggedTabInfo) => {
@@ -488,7 +541,7 @@ function DashboardPageContent() {
     });
     const updatedTabs = [...tabs, ...newTabsWithIds];
     setTabs(updatedTabs);
-    await persistTabs(updatedTabs); // persistTabs is now memoized
+    await persistTabs(updatedTabs); 
     toast({ title: t("tabsImported"), description: t("tabsImportedDesc", { count: newTabsWithIds.length }) });
   }, [currentUser, tabs, persistTabs, toast, t]);
 
@@ -534,19 +587,21 @@ function DashboardPageContent() {
     const updatedGroups = [...tabGroups, ...newGroups];
     setTabs(updatedTabs);
     setTabGroups(updatedGroups);
-    await persistTabsAndGroups(updatedTabs, updatedGroups); // persistTabsAndGroups is now memoized
+    await persistTabsAndGroups(updatedTabs, updatedGroups); 
 
     toast({ title: t("groupsImported"), description: t("groupsImportedDesc", { count: newGroups.length }) });
   }, [currentUser, tabs, tabGroups, persistTabsAndGroups, toast, t]);
 
 
   useEffect(() => {
-    registerAddTabsBatch(handleAddTabsBatch);
-    registerCreateGroupsWithTabsBatch(handleCreateGroupsWithTabsBatch);
-    return () => {
-      registerAddTabsBatch(null); 
-      registerCreateGroupsWithTabsBatch(null);
-    };
+    if (registerAddTabsBatch && registerCreateGroupsWithTabsBatch) {
+        registerAddTabsBatch(handleAddTabsBatch);
+        registerCreateGroupsWithTabsBatch(handleCreateGroupsWithTabsBatch);
+        return () => { // Cleanup: unregister the functions
+          registerAddTabsBatch(null); 
+          registerCreateGroupsWithTabsBatch(null);
+        };
+    }
   }, [registerAddTabsBatch, handleAddTabsBatch, registerCreateGroupsWithTabsBatch, handleCreateGroupsWithTabsBatch]);
 
   const hasAiGroups = tabGroups.some(g => !g.isCustom);
@@ -589,7 +644,7 @@ function DashboardPageContent() {
             <AlertTriangle className="h-12 w-12 text-destructive" />
             <p className="mt-4 text-lg text-destructive">{t('authRequiredToViewDashboard', {defaultValue: "Please log in to view your dashboard."})}</p>
             <Button asChild className="mt-4">
-                <Link href="/login">{t('goToLogin', {defaultValue: "Go to Login"})</Link>
+                <Link href="/login">{t('goToLogin', {defaultValue: "Go to Login"})}</Link>
             </Button>
         </div>
     );
@@ -700,7 +755,13 @@ function DashboardPageContent() {
                   onAddTabToGroup={(groupId) => {
                       if (ungroupedTabs.length > 0) {
                           // Potentially show a dropdown or modal to select which ungrouped tab to add
-                          handleAddTabToGroup(groupId, ungroupedTabs[0].id); // Adds the first one for now
+                          // For simplicity, let's find the first ungrouped tab
+                          const firstUngroupedTab = ungroupedTabs[0];
+                          if (firstUngroupedTab) {
+                            handleAddTabToGroup(groupId, firstUngroupedTab.id);
+                          } else {
+                             toast({ title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "default"});
+                          }
                       } else {
                           toast({ title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "default"});
                       }
