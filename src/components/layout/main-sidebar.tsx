@@ -76,7 +76,7 @@ export function MainSidebar() {
               <SidebarMenuItem>
                 <ImportActiveTabsModal
                   triggerButton={
-                    <SidebarMenuButton tooltip={t('importActiveTabs')}>
+                    <SidebarMenuButton tooltip={t('importActiveTabs', { defaultValue: 'Import active tabs' })}>
                       <UploadCloud /><span>{t('importActiveTabs')}</span>
                     </SidebarMenuButton>
                   }
@@ -85,7 +85,7 @@ export function MainSidebar() {
               <SidebarMenuItem>
                 <ImportBookmarksModal
                   triggerButton={
-                    <SidebarMenuButton tooltip={t('importBookmarks')}>
+                    <SidebarMenuButton tooltip={t('importBookmarks', { defaultValue: 'Import bookmarks' })}>
                       <Bookmark /><span>{t('importBookmarks')}</span>
                     </SidebarMenuButton>
                   }
@@ -99,7 +99,7 @@ export function MainSidebar() {
       <SidebarFooter className="p-4 border-t border-sidebar-border">
          <SidebarMenu>
             <SidebarMenuItem>
-                <SidebarMenuButton onClick={logout} tooltip={t('logout')}>
+                <SidebarMenuButton onClick={logout} tooltip={t('logout', { defaultValue: 'Logout' })}>
                     <LogOut /> <span>{t('logout')}</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>

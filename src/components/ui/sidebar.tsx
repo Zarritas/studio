@@ -76,7 +76,8 @@ const SidebarProvider = React.forwardRef<
     const open = openProp ?? _open
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
-        const openState = typeof value === "function" ? value(open) : value
+        const currentOpen = openProp ?? _open
+        const openState = typeof value === "function" ? value(currentOpen) : value
         if (setOpenProp) {
           setOpenProp(openState)
         } else {
@@ -86,7 +87,7 @@ const SidebarProvider = React.forwardRef<
         // This sets the cookie to keep the sidebar state.
         document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
       },
-      [setOpenProp, open]
+      [setOpenProp, _open, openProp]
     )
 
     // Helper to toggle the sidebar.
@@ -533,12 +534,17 @@ const sidebarMenuButtonVariants = cva(
   }
 )
 
+const baseTooltipPropsConfig = {
+  side: "right" as const,
+  align: "center" as const,
+};
+
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<"button"> & {
     asChild?: boolean
     isActive?: boolean
-    tooltip?: string | React.ComponentProps<typeof TooltipContent>
+    tooltip?: string | Omit<React.ComponentProps<typeof TooltipContent>, 'hidden'>;
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
@@ -556,7 +562,7 @@ const SidebarMenuButton = React.forwardRef<
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
 
-    const button = (
+    const buttonElement = (
       <Comp
         ref={ref}
         data-sidebar="menu-button"
@@ -568,29 +574,27 @@ const SidebarMenuButton = React.forwardRef<
     )
 
     if (!tooltip) {
-      return button
+      return buttonElement;
     }
+    
+    const shouldDisplayTooltip = state === "collapsed" && !isMobile;
 
-    // Prepare tooltip props for TooltipContent, avoiding prop mutation.
-    const baseTooltipProps = {
-      side: "right" as const,
-      align: "center" as const,
-    };
+    if (shouldDisplayTooltip) {
+      const tooltipContentActualProps = React.useMemo(() => {
+        return typeof tooltip === "string"
+            ? { ...baseTooltipPropsConfig, children: tooltip }
+            : { ...baseTooltipPropsConfig, ...tooltip };
+      }, [tooltip]);
 
-    const tooltipContentActualProps =
-      typeof tooltip === "string"
-        ? { ...baseTooltipProps, children: tooltip }
-        : { ...baseTooltipProps, ...tooltip };
-
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
-        <TooltipContent
-          {...tooltipContentActualProps}
-          hidden={state !== "collapsed" || isMobile} // This overrides 'hidden' from tooltipContentActualProps
-        />
-      </Tooltip>
-    )
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>{buttonElement}</TooltipTrigger>
+          <TooltipContent {...tooltipContentActualProps} />
+        </Tooltip>
+      )
+    }
+    
+    return buttonElement;
   }
 )
 SidebarMenuButton.displayName = "SidebarMenuButton"
