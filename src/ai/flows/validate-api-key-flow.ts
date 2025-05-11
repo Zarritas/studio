@@ -11,12 +11,12 @@ import { genkit, type GenkitError } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'zod';
 
-export const ValidateApiKeyInputSchema = z.object({
+const ValidateApiKeyInputSchema = z.object({
   apiKey: z.string().min(1, { message: 'API key cannot be empty' }),
 });
 export type ValidateApiKeyInput = z.infer<typeof ValidateApiKeyInputSchema>;
 
-export const ValidateApiKeyOutputSchema = z.object({
+const ValidateApiKeyOutputSchema = z.object({
   isValid: z.boolean(),
   error: z.string().optional(),
 });
