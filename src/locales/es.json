@@ -1,4 +1,3 @@
-
 {
   "tabwise": "TabWise",
   "settings": "Configuración",
@@ -144,5 +143,7 @@
   "invalidUrlsFoundDesc": "{count} URLs eran inválidas y no pudieron ser importadas. Por favor, revisa el formato.",
   "noUrlsPasted": "No se Pegaron URLs",
   "noUrlsPastedDesc": "Por favor, pega algunas URLs en el área de texto para importar.",
-  "featureNotImplemented": "La función '{feature}' aún no está implementada."
+  "featureNotImplemented": "La función '{feature}' aún no está implementada.",
+  "featureNotReadyTitle": "Importación No Lista",
+  "featureNotReadyDescription": "La función de importación de pestañas aún no está disponible. Por favor, inténtalo de nuevo en un momento."
 }

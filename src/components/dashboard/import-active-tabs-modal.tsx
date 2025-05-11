@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -34,6 +33,16 @@ export function ImportActiveTabsModal({ triggerButton }: ImportActiveTabsModalPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!addTabsBatch) {
+      toast({
+        title: t('featureNotReadyTitle', { defaultValue: "Import Not Ready" }),
+        description: t('featureNotReadyDescription', { defaultValue: "The tab import function is not yet available. Please try again in a moment." }),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const urls = urlsInput.split('\n').map(url => url.trim()).filter(url => url.length > 0);
 
     if (urls.length === 0) {
@@ -79,7 +88,7 @@ export function ImportActiveTabsModal({ triggerButton }: ImportActiveTabsModalPr
     }
     
     if (newTabsData.length > 0 && invalidUrlCount === 0) {
-        // Toast for successful import is handled by addTabsBatch in DashboardPage
+        // Toast for successful import is handled by addTabsBatch in DashboardPageContent
     }
 
 
@@ -115,7 +124,7 @@ export function ImportActiveTabsModal({ triggerButton }: ImportActiveTabsModalPr
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                 {t('cancel')}
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={!addTabsBatch}>
                 <UploadCloud className="mr-2 h-4 w-4" />{t('importButton')}
             </Button>
           </DialogFooter>

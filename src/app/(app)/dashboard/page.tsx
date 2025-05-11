@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -29,7 +28,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
-import { DashboardProvider } from '@/contexts/DashboardContext';
+import { useDashboardContext } from '@/contexts/DashboardContext';
 
 const initialTabs: Tab[] = [
   { id: '1', title: 'Next.js Docs', url: 'https://nextjs.org/docs', lastAccessed: Date.now() - 1000 * 60 * 5, faviconUrl: `https://www.google.com/s2/favicons?domain=nextjs.org&sz=32` },
@@ -73,6 +72,7 @@ function DashboardPageContent() {
   const { toast } = useToast();
   const { t, locale } = useTranslation();
   const [isUngroupedDragOver, setIsUngroupedDragOver] = useState(false);
+  const { registerAddTabsBatch } = useDashboardContext();
 
   const ungroupedTabs = tabs.filter(tab => !tabGroups.some(group => group.tabs.some(t => t.id === tab.id)));
 
@@ -379,7 +379,12 @@ function DashboardPageContent() {
     const newTabsWithIds: Tab[] = tabsData.map((tab, index) => {
         let hostname = 'new-tab';
         try {
-            hostname = new URL(tab.url).hostname;
+            // Ensure URL has a scheme, default to https if missing
+            let fullUrl = tab.url;
+            if (!/^https?:\/\//i.test(tab.url)) {
+              fullUrl = `https://${tab.url}`;
+            }
+            hostname = new URL(fullUrl).hostname;
         } catch (e) {
             console.warn(`Invalid URL in batch: ${tab.url}`);
         }
@@ -393,12 +398,18 @@ function DashboardPageContent() {
     });
     setTabs(prevTabs => [...prevTabs, ...newTabsWithIds]);
     toast({ title: t("tabsImported"), description: t("tabsImportedDesc", { count: newTabsWithIds.length }) });
-  }, [setTabs, toast, t]);
+  }, [setTabs, toast, t]); // Dependencies for useCallback
+
+  useEffect(() => {
+    registerAddTabsBatch(handleAddTabsBatch);
+    return () => {
+      registerAddTabsBatch(null); // Cleanup on unmount
+    };
+  }, [registerAddTabsBatch, handleAddTabsBatch]);
 
   const hasAiGroups = tabGroups.some(g => !g.isCustom);
 
   return (
-    <DashboardProvider addTabsBatch={handleAddTabsBatch}>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight">{t("tabwiseDashboard")}</h1>
@@ -555,7 +566,6 @@ function DashboardPageContent() {
           </div>
         )}
       </div>
-    </DashboardProvider>
   );
 }
 
