@@ -1,10 +1,13 @@
+
 "use client";
 import type { Tab } from '@/types';
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-type AddTabsBatchFn = (tabsData: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[]) => void;
-type CreateGroupsWithTabsBatchFn = (groupsData: { name: string, tabs: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[] }[]) => void;
+// Functions will be implemented in DashboardPage and registered here.
+// They will have access to currentUser from DashboardPage's scope.
+type AddTabsBatchFn = (tabsData: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[]) => Promise<void>;
+type CreateGroupsWithTabsBatchFn = (groupsData: { name: string, tabs: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[] }[]) => Promise<void>;
 
 interface DashboardContextType {
   addTabsBatch: AddTabsBatchFn | null;
@@ -28,11 +31,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [createGroupsWithTabsBatchFn, setCreateGroupsWithTabsBatchFn] = useState<CreateGroupsWithTabsBatchFn | null>(null);
 
   const registerAddTabsBatch = useCallback((fn: AddTabsBatchFn | null) => {
-    setAddTabsBatchFn(() => fn);
+    setAddTabsBatchFn(() => fn); // Pass async function
   }, []);
 
   const registerCreateGroupsWithTabsBatch = useCallback((fn: CreateGroupsWithTabsBatchFn | null) => {
-    setCreateGroupsWithTabsBatchFn(() => fn);
+    setCreateGroupsWithTabsBatchFn(() => fn); // Pass async function
   }, []);
 
   return (

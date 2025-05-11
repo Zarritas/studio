@@ -108,3 +108,13 @@ declare global {
     }
   }
 }
+
+// Moved from settings page to be globally available
+export interface UserSettings {
+  autoCloseInactiveTabs: boolean;
+  inactiveThreshold: number;
+  aiPreferences: string;
+  geminiApiKey: string;
+  locale: string;
+  theme: string; // Added theme to user settings
+}

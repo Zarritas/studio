@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useTranslation } from '@/lib/i18n';
+// import { useTranslation } from '@/lib/i18n'; // Removed to break dependency cycle
 import { auth, googleProvider } from '@/lib/firebase/client';
 import { onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useTranslation();
+  // const { t } = useTranslation(); // Removed
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,14 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Google Sign-In failed:", error);
       toast({
-        title: t('signInErrorTitle', {defaultValue: "Sign-In Error"}),
+        title: "Sign-In Error", // Non-translated
         description: (error as Error).message,
         variant: "destructive"
       });
     } finally {
         // setIsLoading(false); // onAuthStateChanged will set isLoading to false
     }
-  }, [t, toast]);
+  }, [toast]);
 
   const logout = useCallback(async () => {
     setIsLoading(true);
@@ -80,14 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error signing out:", error);
        toast({
-        title: t('signOutErrorTitle', {defaultValue: "Sign-Out Error"}),
+        title: "Sign-Out Error", // Non-translated
         description: (error as Error).message,
         variant: "destructive"
       });
     } finally {
         // setIsLoading(false); // onAuthStateChanged will set isLoading to false
     }
-  }, [t, toast]);
+  }, [toast]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -101,8 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   if (isLoading && pathname !== '/login') {
-     // Use a generic loading message or a specific one from translations
-    return <div className="flex items-center justify-center min-h-screen">{t('loading', {defaultValue: 'Loading...'})}</div>;
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>; // Non-translated
   }
   
   // Allow access to /login page even if loading or not authenticated

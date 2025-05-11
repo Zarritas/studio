@@ -8,7 +8,7 @@ import { AddTabModal } from '@/components/dashboard/add-tab-modal';
 import { CreateGroupModal } from '@/components/dashboard/create-group-modal';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Zap, Lightbulb, Trash2, AlertTriangle, Layers3, KeyRound } from 'lucide-react';
+import { Zap, Lightbulb, Trash2, AlertTriangle, Layers3, KeyRound, Loader2 } from 'lucide-react';
 import { suggestTabGroups, SuggestTabGroupsInput, SuggestTabGroupsOutput } from '@/ai/flows/suggest-tab-groups';
 import { suggestInactiveTabsClosure, SuggestInactiveTabsClosureInput, SuggestInactiveTabsClosureOutput } from '@/ai/flows/suggest-inactive-tabs-closure';
 import { useToast } from '@/hooks/use-toast';
@@ -32,70 +32,86 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from '@/lib/utils';
 import { useDashboardContext } from '@/contexts/DashboardContext';
 import Link from 'next/link';
+import { useAuth } from '@/lib/hooks/use-auth';
+import { getUserProfile, saveUserTabs, saveUserTabGroups, UserProfileData } from '@/lib/firebase/firestoreService';
+import type { UserSettings } from '@/types/settings';
 
-const initialTabs: Tab[] = [
-  { id: '1', title: 'Next.js Docs', url: 'https://nextjs.org/docs', lastAccessed: Date.now() - 1000 * 60 * 5, faviconUrl: `https://www.google.com/s2/favicons?domain=nextjs.org&sz=32` },
-  { id: '2', title: 'Tailwind CSS', url: 'https://tailwindcss.com/docs/installation', lastAccessed: Date.now() - 1000 * 60 * 10, faviconUrl: `https://www.google.com/s2/favicons?domain=tailwindcss.com&sz=32` },
-  { id: '3', title: 'ShadCN UI', url: 'https://ui.shadcn.com/docs', lastAccessed: Date.now() - 1000 * 60 * 2, faviconUrl: `https://www.google.com/s2/favicons?domain=ui.shadcn.com&sz=32` },
-  { id: '4', title: 'React Docs', url: 'https://react.dev/', lastAccessed: Date.now() - 1000 * 60 * 60 * 2, faviconUrl: `https://www.google.com/s2/favicons?domain=react.dev&sz=32` },
-  { id: '5', title: 'GitHub - My Project', url: 'https://github.com/my-username/my-repo', lastAccessed: Date.now() - 1000 * 60 * 30, faviconUrl: `https://www.google.com/s2/favicons?domain=github.com&sz=32` },
-  { id: '6', title: 'Google News - Tech', url: 'https://news.google.com/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGRqTVhZU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US%3Aen', lastAccessed: Date.now() - 1000 * 60 * 60 * 24, faviconUrl: `https://www.google.com/s2/favicons?domain=news.google.com&sz=32` },
-  { id: '7', title: 'MDN Web Docs - JavaScript', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript', lastAccessed: Date.now() - 1000 * 60 * 15, faviconUrl: `https://www.google.com/s2/favicons?domain=developer.mozilla.org&sz=32` },
-  { id: '8', title: 'Stack Overflow - React Hooks Question', url: 'https://stackoverflow.com/questions/tagged/react-hooks', lastAccessed: Date.now() - 1000 * 60 * 45, faviconUrl: `https://www.google.com/s2/favicons?domain=stackoverflow.com&sz=32` },
-  { id: '9', title: 'YouTube - Coding Tutorial', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', lastAccessed: Date.now() - 1000 * 60 * 20, faviconUrl: `https://www.google.com/s2/favicons?domain=youtube.com&sz=32` }, 
-  { id: '10', title: 'Twitter / X - Tech News Feed', url: 'https://x.com/elonmusk', lastAccessed: Date.now() - 1000 * 60 * 50, faviconUrl: `https://www.google.com/s2/favicons?domain=x.com&sz=32` },
-  { id: '11', title: 'Figma Community - UI Kits', url: 'https://www.figma.com/community/category/ui_kits', lastAccessed: Date.now() - 1000 * 60 * 60 * 3, faviconUrl: `https://www.google.com/s2/favicons?domain=figma.com&sz=32` },
-  { id: '12', title: 'Google Drive - Project Files', url: 'https://drive.google.com/drive/my-drive', lastAccessed: Date.now() - 1000 * 60 * 120, faviconUrl: `https://www.google.com/s2/favicons?domain=drive.google.com&sz=32` },
-  { id: '13', title: 'Notion - Meeting Notes', url: 'https://www.notion.so/meeting-notes-xyz', lastAccessed: Date.now() - 1000 * 60 * 90, faviconUrl: `https://www.google.com/s2/favicons?domain=notion.so&sz=32` },
-  { id: '14', title: 'Spotify - Lo-fi Beats', url: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M', lastAccessed: Date.now() - 1000 * 60 * 60 * 5, faviconUrl: `https://www.google.com/s2/favicons?domain=open.spotify.com&sz=32` },
-  { id: '15', title: 'Wikipedia - AI History', url: 'https://en.wikipedia.org/wiki/History_of_artificial_intelligence', lastAccessed: Date.now() - 1000 * 60 * 25, faviconUrl: `https://www.google.com/s2/favicons?domain=en.wikipedia.org&sz=32` },
-  { id: '16', title: 'Reddit - r/programming', url: 'https://www.reddit.com/r/programming/', lastAccessed: Date.now() - 1000 * 60 * 35, faviconUrl: `https://www.google.com/s2/favicons?domain=reddit.com&sz=32` },
-  { id: '17', title: 'AWS Console - S3 Buckets', url: 'https://s3.console.aws.amazon.com/s3/home', lastAccessed: Date.now() - 1000 * 60 * 60 * 4, faviconUrl: `https://www.google.com/s2/favicons?domain=aws.amazon.com&sz=32` },
-  { id: '18', title: 'Netflix - New Series', url: 'https://www.netflix.com/browse', lastAccessed: Date.now() - 1000 * 60 * 180, faviconUrl: `https://www.google.com/s2/favicons?domain=netflix.com&sz=32` },
-  { id: '19', title: 'LinkedIn - My Network', url: 'https://www.linkedin.com/mynetwork/', lastAccessed: Date.now() - 1000 * 60 * 55, faviconUrl: `https://www.google.com/s2/favicons?domain=linkedin.com&sz=32` },
-  { id: '20', title: 'Duolingo - Spanish Lesson', url: 'https://www.duolingo.com/learn', lastAccessed: Date.now() - 1000 * 60 * 5, faviconUrl: `https://www.google.com/s2/favicons?domain=duolingo.com&sz=32` },
-  { id: '21', title: 'Coursera - Machine Learning Course', url: 'https://www.coursera.org/learn/machine-learning', lastAccessed: Date.now() - 1000 * 60 * 60 * 48, faviconUrl: `https://www.google.com/s2/favicons?domain=coursera.org&sz=32` },
-  { id: '22', title: 'Amazon - Shopping Cart', url: 'https://www.amazon.com/gp/cart/view.html', lastAccessed: Date.now() - 1000 * 60 * 10, faviconUrl: `https://www.google.com/s2/favicons?domain=amazon.com&sz=32` },
-  { id: '23', title: 'Medium - Tech Article', url: 'https://medium.com/topic/technology', lastAccessed: Date.now() - 1000 * 60 * 60, faviconUrl: `https://www.google.com/s2/favicons?domain=medium.com&sz=32` },
-  { id: '24', title: 'The Verge - Gadget Reviews', url: 'https://www.theverge.com/reviews', lastAccessed: Date.now() - 1000 * 60 * 120, faviconUrl: `https://www.google.com/s2/favicons?domain=theverge.com&sz=32` },
-  { id: '25', title: 'Khan Academy - Math Practice', url: 'https://www.khanacademy.org/math', lastAccessed: Date.now() - 1000 * 60 * 300, faviconUrl: `https://www.google.com/s2/favicons?domain=khanacademy.org&sz=32` },
-  { id: '26', title: 'Pinterest - Home Decor Ideas', url: 'https://www.pinterest.com/ideas/home-decor/914173009174/', lastAccessed: Date.now() - 1000 * 60 * 40, faviconUrl: `https://www.google.com/s2/favicons?domain=pinterest.com&sz=32` },
-  { id: '27', title: 'ESPN - Sports News', url: 'https://www.espn.com/', lastAccessed: Date.now() - 1000 * 60 * 70, faviconUrl: `https://www.google.com/s2/favicons?domain=espn.com&sz=32` },
-  { id: '28', title: 'AllRecipes - Dinner Ideas', url: 'https://www.allrecipes.com/', lastAccessed: Date.now() - 1000 * 60 * 150, faviconUrl: `https://www.google.com/s2/favicons?domain=allrecipes.com&sz=32` },
-  { id: '29', title: 'Dev.to - Blog Post', url: 'https://dev.to/', lastAccessed: Date.now() - 1000 * 60 * 60 * 6, faviconUrl: `https://www.google.com/s2/favicons?domain=dev.to&sz=32` },
-  { id: '30', title: 'Adobe Color - Color Palette Generator', url: 'https://color.adobe.com/create/color-wheel', lastAccessed: Date.now() - 1000 * 60 * 80, faviconUrl: `https://www.google.com/s2/favicons?domain=color.adobe.com&sz=32` },
-];
-
+// Example initial tabs are now removed, will be loaded from Firestore
+// const initialTabs: Tab[] = [ ... ];
 
 function DashboardPageContent() {
-  const [tabs, setTabs] = useState<Tab[]>(initialTabs);
+  const { currentUser, isLoading: authLoading } = useAuth();
+  const [tabs, setTabs] = useState<Tab[]>([]);
   const [tabGroups, setTabGroups] = useState<TabGroupType[]>([]);
+  const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true); // For loading tabs/groups
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [aiSuggestionError, setAiSuggestionError] = useState<string | null>(null);
   const { toast } = useToast();
   const { t, locale } = useTranslation();
   const [isUngroupedDragOver, setIsUngroupedDragOver] = useState(false);
   const { registerAddTabsBatch, registerCreateGroupsWithTabsBatch } = useDashboardContext();
-  const [geminiApiKey, setGeminiApiKey] = useState<string | null>(null);
-  const [isApiKeyChecked, setIsApiKeyChecked] = useState(false);
-
+  // geminiApiKey and isApiKeyChecked will now come from userSettings
+  
   const ungroupedTabs = tabs.filter(tab => !tabGroups.some(group => group.tabs.some(t => t.id === tab.id)));
 
+  // Fetch user data (tabs, groups, settings) from Firestore
   useEffect(() => {
-    const storedSettings = localStorage.getItem('tabwise_app_settings');
-    if (storedSettings) {
-      const settings = JSON.parse(storedSettings);
-      setGeminiApiKey(settings.geminiApiKey || null);
+    if (currentUser && !authLoading) {
+      setIsLoadingData(true);
+      getUserProfile(currentUser.uid)
+        .then(profile => {
+          if (profile) {
+            setTabs(profile.tabs || []);
+            setTabGroups(profile.tabGroups || []);
+            setUserSettings(profile.settings || null);
+          } else {
+            // New user or error, set empty state
+            setTabs([]);
+            setTabGroups([]);
+            setUserSettings(null);
+          }
+          setIsLoadingData(false);
+        })
+        .catch(error => {
+          console.error("Error fetching user profile:", error);
+          toast({ title: t("error"), description: "Failed to load your data.", variant: "destructive" });
+          setIsLoadingData(false);
+        });
+    } else if (!authLoading) {
+      // No current user and auth is not loading (e.g., logged out)
+      setIsLoadingData(false);
+      setTabs([]);
+      setTabGroups([]);
+      setUserSettings(null);
     }
-    setIsApiKeyChecked(true);
-  }, []);
+  }, [currentUser, authLoading, toast, t]);
+
+  const persistTabs = async (newTabs: Tab[]) => {
+    if (currentUser) {
+      await saveUserTabs(currentUser.uid, newTabs);
+    }
+  };
+
+  const persistTabGroups = async (newTabGroups: TabGroupType[]) => {
+    if (currentUser) {
+      await saveUserTabGroups(currentUser.uid, newTabGroups);
+    }
+  };
+  
+  const persistTabsAndGroups = async (newTabs: Tab[], newTabGroups: TabGroupType[]) => {
+    if (currentUser) {
+        const successTabs = await saveUserTabs(currentUser.uid, newTabs);
+        const successGroups = await saveUserTabGroups(currentUser.uid, newTabGroups);
+        if (!successTabs || !successGroups) {
+            toast({ title: t("error"), description: "Failed to save some changes.", variant: "destructive"});
+        }
+    }
+  }
+
 
   const handleSuggestTabGroups = async () => {
-    if (!isApiKeyChecked) {
-        toast({ title: t("checkingApiKey"), description: t("checkingApiKeyDesc"), variant: "default" });
-        return;
-    }
-    if (!geminiApiKey) {
+    if (!userSettings?.geminiApiKey) {
       toast({ title: t("apiKeyRequiredTitle"), description: t("apiKeyRequiredDesc"), variant: "destructive" });
       setAiSuggestionError(t("apiKeyRequiredTitle"));
       return;
@@ -124,7 +140,8 @@ function DashboardPageContent() {
       };
       const suggestedGroupsOutput: SuggestTabGroupsOutput = await suggestTabGroups(input);
       
-      const nextTabGroupsState = [...tabGroups];
+      let nextTabGroupsState = [...tabGroups];
+      let nextTabsState = [...tabs]; // Keep track of tabs if AI adds new ones (currently it doesn't directly)
       let newGroupsCreatedCount = 0;
       let groupsUpdatedCount = 0;
 
@@ -138,22 +155,14 @@ function DashboardPageContent() {
               schemedUrl = `https://${urlFromAI}`;
             }
       
-            const existingTab = tabs.find(t => t.url === urlFromAI || t.url === schemedUrl);
+            const existingTab = nextTabsState.find(t => t.url === urlFromAI || t.url === schemedUrl);
             if (existingTab) return existingTab;
       
-            try {
-              const newUrlObject = new URL(schemedUrl);
-              return { 
-                id: `ai-new-tab-${newUrlObject.hostname}-${index}-${Math.random()}`, 
-                title: newUrlObject.hostname, 
-                url: schemedUrl, 
-                lastAccessed: Date.now(),
-                faviconUrl: `https://www.google.com/s2/favicons?domain=${newUrlObject.hostname}&sz=32`
-              } as Tab;
-            } catch (e) {
-              console.warn(`Invalid URL from AI after attempting to add scheme, skipping: '${urlFromAI}' -> '${schemedUrl}'`, e);
-              return null; 
-            }
+            // AI currently should only work with existing ungrouped tabs
+            // If AI suggests a tab that doesn't exist in ungrouped, we ignore it for now, or log warning
+            // For this iteration, AI works with existing ungrouped tab URLs.
+            console.warn(`AI suggested a tab URL not found in current tabs: ${urlFromAI}`);
+            return null; 
           }).filter(Boolean) as Tab[]
       }));
       
@@ -189,7 +198,11 @@ function DashboardPageContent() {
           }
       });
       
-      setTabGroups(nextTabGroupsState.filter(g => g.tabs.length > 0 || g.isCustom));
+      const finalTabGroups = nextTabGroupsState.filter(g => g.tabs.length > 0 || g.isCustom);
+      setTabGroups(finalTabGroups);
+      if (currentUser) {
+        await persistTabGroups(finalTabGroups);
+      }
       
       let toastMessage = "";
       if (newGroupsCreatedCount > 0 && groupsUpdatedCount > 0) {
@@ -214,11 +227,7 @@ function DashboardPageContent() {
   };
 
   const handleSuggestInactiveTabs = async () => {
-    if (!isApiKeyChecked) {
-        toast({ title: t("checkingApiKey"), description: t("checkingApiKeyDesc"), variant: "default" });
-        return;
-    }
-    if (!geminiApiKey) {
+    if (!userSettings?.geminiApiKey) {
       toast({ title: t("apiKeyRequiredTitle"), description: t("apiKeyRequiredDesc"), variant: "destructive" });
       setAiSuggestionError(t("apiKeyRequiredTitle"));
       return;
@@ -227,9 +236,10 @@ function DashboardPageContent() {
     setIsLoadingAI(true);
     setAiSuggestionError(null);
     const tabActivityData = JSON.stringify(tabs.map(t => ({ title: t.title, url: t.url, lastAccessed: t.lastAccessed })));
+    const userPrefsString = userSettings?.aiPreferences || "";
     
     try {
-      const input: SuggestInactiveTabsClosureInput = { tabActivityData };
+      const input: SuggestInactiveTabsClosureInput = { tabActivityData, userPreferences: userPrefsString };
       const suggestions: SuggestInactiveTabsClosureOutput = await suggestInactiveTabsClosure(input);
       
       if (suggestions.tabsToClose.length > 0) {
@@ -262,18 +272,22 @@ function DashboardPageContent() {
     setIsLoadingAI(false);
   };
   
-  const removeTabsByUrl = (urlsToClose: string[]) => {
-    setTabs(prevTabs => prevTabs.filter(tab => !urlsToClose.includes(tab.url)));
-    setTabGroups(prevGroups => 
-      prevGroups.map(group => ({
+  const removeTabsByUrl = async (urlsToClose: string[]) => {
+    const newTabs = tabs.filter(tab => !urlsToClose.includes(tab.url));
+    const newTabGroups = tabGroups.map(group => ({
         ...group,
         tabs: group.tabs.filter(tab => !urlsToClose.includes(tab.url))
-      })).filter(group => group.tabs.length > 0 || group.isCustom)
-    );
+      })).filter(group => group.tabs.length > 0 || group.isCustom);
+
+    setTabs(newTabs);
+    setTabGroups(newTabGroups);
+    if (currentUser) {
+        await persistTabsAndGroups(newTabs, newTabGroups);
+    }
     toast({ title: t("tabsClosed"), description: t("tabsClosedDesc", { count: urlsToClose.length }) });
   };
 
-  const handleAddTab = (newTab: Omit<Tab, 'id' | 'lastAccessed'>) => {
+  const handleAddTab = async (newTab: Omit<Tab, 'id' | 'lastAccessed'>) => {
     let hostname = 'new-tab';
     let fullUrl = newTab.url;
     try {
@@ -291,33 +305,47 @@ function DashboardPageContent() {
       lastAccessed: Date.now(),
       faviconUrl: `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`
     };
-    setTabs(prevTabs => [...prevTabs, tabWithId]);
+    const updatedTabs = [...tabs, tabWithId];
+    setTabs(updatedTabs);
+    if (currentUser) {
+      await persistTabs(updatedTabs);
+    }
     toast({ title: t("tabAdded"), description: t("tabAddedDesc", { title: tabWithId.title }) });
   };
 
-  const handleCreateCustomGroup = (groupName: string) => {
+  const handleCreateCustomGroup = async (groupName: string) => {
     const newGroup: TabGroupType = {
       id: `custom-group-${Date.now()}-${groupName.replace(/\s+/g, '-')}`,
       name: groupName,
       tabs: [],
       isCustom: true,
     };
-    setTabGroups(prevGroups => [...prevGroups, newGroup]);
+    const updatedGroups = [...tabGroups, newGroup];
+    setTabGroups(updatedGroups);
+    if (currentUser) {
+      await persistTabGroups(updatedGroups);
+    }
     toast({ title: t("groupCreated"), description: t("groupCreatedDesc", { name: groupName }) });
   };
 
-  const handleRemoveTabFromGroup = (groupId: string, tabId: string) => {
-    setTabGroups(prevGroups =>
-      prevGroups.map(group =>
+  const handleRemoveTabFromGroup = async (groupId: string, tabId: string) => {
+    const updatedGroups = tabGroups.map(group =>
         group.id === groupId
           ? { ...group, tabs: group.tabs.filter(tab => tab.id !== tabId) }
           : group
-      ).filter(g => g.tabs.length > 0 || g.isCustom) 
-    );
+      ).filter(g => g.tabs.length > 0 || g.isCustom);
+    setTabGroups(updatedGroups);
+    if (currentUser) {
+      await persistTabGroups(updatedGroups);
+    }
   };
 
-  const handleRemoveGroup = (groupId: string) => {
-    setTabGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+  const handleRemoveGroup = async (groupId: string) => {
+    const updatedGroups = tabGroups.filter(group => group.id !== groupId);
+    setTabGroups(updatedGroups);
+    if (currentUser) {
+      await persistTabGroups(updatedGroups);
+    }
     toast({ title: t("groupRemoved"), variant: "destructive" });
   };
 
@@ -333,46 +361,55 @@ function DashboardPageContent() {
     toast({ title: t("groupExported"), description: t("groupExportedDesc", { name: group.name }) });
   };
 
-  const handleDeleteAllGroups = () => {
-    setTabGroups(prevGroups => prevGroups.filter(g => g.isCustom)); 
+  const handleDeleteAllGroups = async () => {
+    const updatedGroups = tabGroups.filter(g => g.isCustom);
+    setTabGroups(updatedGroups); 
+    if (currentUser) {
+      await persistTabGroups(updatedGroups);
+    }
     toast({ title: t("allAIGroupsDeleted"), description: t("allAIGroupsDeletedDesc"), variant: "destructive" });
   };
   
-  const handleAddTabToGroup = (groupId: string, tabId: string) => {
+  const handleAddTabToGroup = async (groupId: string, tabId: string) => {
     const tabToAdd = tabs.find(t => t.id === tabId);
     if (!tabToAdd) return;
 
     let updatedGroups = tabGroups.map(g => {
-      if (g.tabs.some(t => t.id === tabId)) {
+      if (g.tabs.some(t => t.id === tabId)) { // Remove from any existing group first
         return { ...g, tabs: g.tabs.filter(t => t.id !== tabId) };
       }
       return g;
     });
     
     updatedGroups = updatedGroups.map(g => {
-      if (g.id === groupId) {
-        if (!g.tabs.some(t => t.id === tabId)) {
+      if (g.id === groupId) { // Add to the target group
+        if (!g.tabs.some(t => t.id === tabId)) { // Ensure not already present
           return { ...g, tabs: [...g.tabs, tabToAdd] };
         }
       }
       return g;
     });
-
-    setTabGroups(updatedGroups.filter(g => g.tabs.length > 0 || g.isCustom));
+    const finalGroups = updatedGroups.filter(g => g.tabs.length > 0 || g.isCustom);
+    setTabGroups(finalGroups);
+    if (currentUser) {
+      await persistTabGroups(finalGroups);
+    }
     toast({title: t("tabAddedToGroup"), description: t("tabAddedToGroupDesc", { title: tabToAdd.title, groupName: tabGroups.find(g=>g.id === groupId)?.name || '' })});
   };
 
 
-  const handleEditGroupName = (groupId: string, newName: string) => {
-    setTabGroups(prevGroups => 
-      prevGroups.map(g => 
-        g.id === groupId ? {...g, name: newName, isCustom: true } : g 
-      )
-    );
+  const handleEditGroupName = async (groupId: string, newName: string) => {
+    const updatedGroups = tabGroups.map(g => 
+        g.id === groupId ? {...g, name: newName, isCustom: true } : g // Editing makes it custom
+      );
+    setTabGroups(updatedGroups);
+    if (currentUser) {
+      await persistTabGroups(updatedGroups);
+    }
     toast({title: t("groupRenamed"), description: t("groupRenamedDesc", { name: newName })});
   };
   
-  const handleDropOnGroup = (draggedTabInfo: DraggedTabInfo, targetGroupId: string) => {
+  const handleDropOnGroup = async (draggedTabInfo: DraggedTabInfo, targetGroupId: string) => {
     const { tabId, sourceType, sourceGroupId } = draggedTabInfo;
   
     if (sourceType === 'group' && sourceGroupId === targetGroupId) return; 
@@ -380,26 +417,35 @@ function DashboardPageContent() {
     const tabToMove = tabs.find(t => t.id === tabId);
     if (!tabToMove) return;
   
-    setTabGroups(prevGroups => {
-      let newGroups = prevGroups.map(g => ({ ...g, tabs: [...g.tabs] }));
+    let newGroups = [...tabGroups];
+    
+    // Remove from source group if it was in one
+    if (sourceType === 'group' && sourceGroupId) {
+      newGroups = newGroups.map(g => 
+        g.id === sourceGroupId 
+          ? { ...g, tabs: g.tabs.filter(t => t.id !== tabId) }
+          : g
+      );
+    }
   
-      if (sourceType === 'group' && sourceGroupId) {
-        const srcGroup = newGroups.find(g => g.id === sourceGroupId);
-        if (srcGroup) {
-          srcGroup.tabs = srcGroup.tabs.filter(t => t.id !== tabId);
-        }
-      }
-  
-      const tgtGroup = newGroups.find(g => g.id === targetGroupId);
-      if (tgtGroup && !tgtGroup.tabs.some(t => t.id === tabId)) {
-        tgtGroup.tabs.push(tabToMove);
-      }
-      return newGroups.filter(g => g.tabs.length > 0 || g.isCustom); 
-    });
+    // Add to target group
+    const targetGroupIndex = newGroups.findIndex(g => g.id === targetGroupId);
+    if (targetGroupIndex !== -1 && !newGroups[targetGroupIndex].tabs.some(t => t.id === tabId)) {
+      newGroups[targetGroupIndex] = {
+        ...newGroups[targetGroupIndex],
+        tabs: [...newGroups[targetGroupIndex].tabs, tabToMove]
+      };
+    }
+    
+    const finalGroups = newGroups.filter(g => g.tabs.length > 0 || g.isCustom);
+    setTabGroups(finalGroups); 
+    if (currentUser) {
+      await persistTabGroups(finalGroups);
+    }
     toast({ title: t("tabMoved"), description: t("tabMovedDesc", { title: tabToMove.title, groupName: tabGroups.find(g=>g.id === targetGroupId)?.name || 'target group'}) });
   };
 
-  const handleDropOnUngroupedArea = (draggedTabInfo: DraggedTabInfo) => {
+  const handleDropOnUngroupedArea = async (draggedTabInfo: DraggedTabInfo) => {
     const { tabId, sourceType, sourceGroupId } = draggedTabInfo;
   
     if (sourceType === 'ungrouped') return; 
@@ -408,19 +454,22 @@ function DashboardPageContent() {
     if (!tabToMove) return;
   
     if (sourceType === 'group' && sourceGroupId) {
-      setTabGroups(prevGroups => {
-        let newGroups = prevGroups.map(g => ({ ...g, tabs: [...g.tabs] }));
-        const srcGroup = newGroups.find(g => g.id === sourceGroupId);
-        if (srcGroup) {
-          srcGroup.tabs = srcGroup.tabs.filter(t => t.id !== tabId);
-        }
-        return newGroups.filter(g => g.tabs.length > 0 || g.isCustom); 
-      });
+      const updatedGroups = tabGroups.map(g => 
+          g.id === sourceGroupId 
+            ? { ...g, tabs: g.tabs.filter(t => t.id !== tabId) }
+            : g
+        ).filter(g => g.tabs.length > 0 || g.isCustom);
+      setTabGroups(updatedGroups);
+      if (currentUser) {
+        await persistTabGroups(updatedGroups);
+      }
     }
     toast({ title: t("tabMovedToUngrouped"), description: t("tabMovedToUngroupedDesc", { title: tabToMove.title }) });
   };
 
-  const handleAddTabsBatch = useCallback((tabsData: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[]) => {
+  const handleAddTabsBatch = useCallback(async (tabsData: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[]) => {
+    if (!currentUser) return;
+
     const newTabsWithIds: Tab[] = tabsData.map((tab, index) => {
         let hostname = 'new-tab';
         let fullUrl = tab.url;
@@ -441,11 +490,15 @@ function DashboardPageContent() {
             isPlaceholder: true,
         };
     });
-    setTabs(prevTabs => [...prevTabs, ...newTabsWithIds]);
+    const updatedTabs = [...tabs, ...newTabsWithIds];
+    setTabs(updatedTabs);
+    await persistTabs(updatedTabs);
     toast({ title: t("tabsImported"), description: t("tabsImportedDesc", { count: newTabsWithIds.length }) });
-  }, [setTabs, toast, t]);
+  }, [currentUser, tabs, persistTabs, toast, t]);
 
-  const handleCreateGroupsWithTabsBatch = useCallback((groupsData: { name: string, tabs: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[] }[]) => {
+  const handleCreateGroupsWithTabsBatch = useCallback(async (groupsData: { name: string, tabs: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[] }[]) => {
+    if (!currentUser) return;
+
     const newGroups: TabGroupType[] = [];
     const allNewTabsForGlobalList: Tab[] = [];
 
@@ -476,16 +529,19 @@ function DashboardPageContent() {
         id: newGroupId,
         name: groupData.name,
         tabs: processedTabsForGroup,
-        isCustom: true, // Imported groups are treated as custom
+        isCustom: true, 
       });
       allNewTabsForGlobalList.push(...processedTabsForGroup);
     });
 
-    setTabGroups(prevGroups => [...prevGroups, ...newGroups]);
-    setTabs(prevTabs => [...prevTabs, ...allNewTabsForGlobalList]); // Add to global tabs list as well
+    const updatedTabs = [...tabs, ...allNewTabsForGlobalList];
+    const updatedGroups = [...tabGroups, ...newGroups];
+    setTabs(updatedTabs);
+    setTabGroups(updatedGroups);
+    await persistTabsAndGroups(updatedTabs, updatedGroups);
 
     toast({ title: t("groupsImported"), description: t("groupsImportedDesc", { count: newGroups.length }) });
-  }, [setTabGroups, setTabs, toast, t]);
+  }, [currentUser, tabs, tabGroups, persistTabsAndGroups, toast, t]);
 
 
   useEffect(() => {
@@ -500,7 +556,7 @@ function DashboardPageContent() {
   const hasAiGroups = tabGroups.some(g => !g.isCustom);
 
   const AiSuggestButtonWrapper = ({children}: {children: React.ReactNode}) => {
-    if (!isApiKeyChecked || geminiApiKey) {
+    if (userSettings && userSettings.geminiApiKey) { // Check if settings are loaded and API key exists
         return <>{children}</>;
     }
     return (
@@ -520,6 +576,29 @@ function DashboardPageContent() {
     );
   };
 
+  if (authLoading || isLoadingData) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-150px)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="mt-4 text-lg text-muted-foreground">{t('loadingYourData', {defaultValue: "Loading your TabWise data..."})}</p>
+        </div>
+    );
+  }
+  
+  if (!currentUser && !authLoading) {
+    // This case should ideally be handled by AuthProvider redirecting to login
+    // but as a fallback or if user lands here directly somehow:
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-150px)]">
+            <AlertTriangle className="h-12 w-12 text-destructive" />
+            <p className="mt-4 text-lg text-destructive">{t('authRequiredToViewDashboard', {defaultValue: "Please log in to view your dashboard."})}</p>
+            <Button asChild className="mt-4">
+                <Link href="/login">{t('goToLogin', {defaultValue: "Go to Login"})}</Link>
+            </Button>
+        </div>
+    );
+  }
+
 
   return (
       <div className="space-y-6">
@@ -535,7 +614,7 @@ function DashboardPageContent() {
           <AiSuggestButtonWrapper>
             <Button 
               onClick={handleSuggestTabGroups} 
-              disabled={isLoadingAI || ungroupedTabs.length === 0 || (!isApiKeyChecked || !geminiApiKey)}
+              disabled={isLoadingAI || ungroupedTabs.length === 0 || (!userSettings || !userSettings.geminiApiKey)}
             >
               <Zap className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiSuggesting') : t('aiSuggestGroups')}
             </Button>
@@ -544,7 +623,7 @@ function DashboardPageContent() {
           <AiSuggestButtonWrapper>
             <Button 
               onClick={handleSuggestInactiveTabs} 
-              disabled={isLoadingAI || (!isApiKeyChecked || !geminiApiKey)}
+              disabled={isLoadingAI || (!userSettings || !userSettings.geminiApiKey)}
             >
               <Lightbulb className="mr-2 h-4 w-4" /> {isLoadingAI ? t('aiAnalyzing') : t('aiSuggestCloseTabs')}
             </Button>
@@ -624,9 +703,10 @@ function DashboardPageContent() {
                   onExportGroup={handleExportGroup}
                   onAddTabToGroup={(groupId) => {
                       if (ungroupedTabs.length > 0) {
-                          handleAddTabToGroup(groupId, ungroupedTabs[0].id);
+                          // Potentially show a dropdown or modal to select which ungrouped tab to add
+                          handleAddTabToGroup(groupId, ungroupedTabs[0].id); // Adds the first one for now
                       } else {
-                          toast({ title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "destructive"});
+                          toast({ title: t("noUngroupedTabs"), description: t("noUngroupedTabsDesc"), variant: "default"});
                       }
                   }}
                   onEditGroupName={handleEditGroupName}
@@ -669,14 +749,19 @@ function DashboardPageContent() {
                   key={tab.id} 
                   tab={tab}
                   sourceInfo={{ type: 'ungrouped' }}
-                  onRemove={(tabId) => {
-                    setTabs(prevTabs => prevTabs.filter(t => t.id !== tabId));
-                    setTabGroups(prevGroups => 
-                      prevGroups.map(group => ({
+                  onRemove={async (tabId) => {
+                    const newTabs = tabs.filter(t => t.id !== tabId);
+                    // Also ensure this tab is removed if it was somehow in a group (shouldn't be if it's in ungroupedTabs)
+                    const newTabGroups = tabGroups.map(group => ({
                         ...group,
                         tabs: group.tabs.filter(t => t.id !== tabId)
-                      })).filter(group => group.tabs.length > 0 || group.isCustom) 
-                    );
+                      })).filter(group => group.tabs.length > 0 || group.isCustom);
+                    
+                    setTabs(newTabs);
+                    setTabGroups(newTabGroups); // Though it shouldn't affect groups if truly ungrouped
+                    if (currentUser) {
+                        await persistTabsAndGroups(newTabs, newTabGroups);
+                    }
                 }} />
               ))}
             </div>
@@ -695,7 +780,7 @@ function DashboardPageContent() {
                 <AiSuggestButtonWrapper>
                   <Button 
                       onClick={handleSuggestTabGroups} 
-                      disabled={isLoadingAI || ungroupedTabs.length === 0 || (!isApiKeyChecked || !geminiApiKey)}
+                      disabled={isLoadingAI || ungroupedTabs.length === 0 || (!userSettings || !userSettings.geminiApiKey)}
                   >
                       <Zap className="mr-2 h-4 w-4" /> {t('aiSuggestGroups')}
                   </Button>

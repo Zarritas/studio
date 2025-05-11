@@ -5,7 +5,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/auth-provider';
-import { LocaleProvider } from '@/lib/i18n/index'; // Corrected import path if it was index.tsx previously
+import { LocaleProvider } from '@/lib/i18n/index';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -30,21 +30,23 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <LocaleProvider> {/* LocaleProvider now wraps AuthProvider */}
-            <AuthProvider>
+        {/* AuthProvider needs to be outermost because ThemeProvider and LocaleProvider depend on it */}
+        <AuthProvider> 
+          {/* LocaleProvider is next, as AuthProvider no longer depends on it. ThemeProvider might depend on LocaleProvider if themes were locale-specific. */}
+          <LocaleProvider> 
+            {/* ThemeProvider (our custom one which uses next-themes internally and useAuth) is last among these three. */}
+            <ThemeProvider 
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
               {children}
               <Toaster />
-            </AuthProvider>
+            </ThemeProvider>
           </LocaleProvider>
-        </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
 }
-

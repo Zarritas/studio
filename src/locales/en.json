@@ -178,7 +178,7 @@
   "apiKeyManagementDesc": "Manage your API keys for AI services.",
   "geminiApiKeyLabel": "Gemini API Key",
   "geminiApiKeyPlaceholder": "Enter your Google Gemini API Key",
-  "geminiApiKeyDesc": "Your Gemini API Key will be used for AI-powered suggestions. It is stored locally in your browser.",
+  "geminiApiKeyDesc": "Your Gemini API Key will be used for AI-powered suggestions. It is stored with your user profile.",
   "apiKeyRequiredTitle": "API Key Required",
   "apiKeyRequiredDesc": "Please set your Gemini API Key in settings to use AI features.",
   "apiKeyRequiredTooltip": "Gemini API Key needed for AI features.",
@@ -191,5 +191,11 @@
   "apiKeyInvalidDesc": "The API key could not be verified. Please check it and try again. Other settings were saved.",
   "apiKeyVerificationErrorTitle": "API Key Verification Error",
   "apiKeyVerificationErrorDesc": "An error occurred while verifying the API key. Please try again. Other settings were saved.",
-  "verifyingApiKeyButtonText": "Verifying..."
+  "verifyingApiKeyButtonText": "Verifying...",
+  "loadingYourData": "Loading your TabWise data...",
+  "authRequiredToViewDashboard": "Please log in to view your dashboard.",
+  "goToLogin": "Go to Login",
+  "loadingSettings": "Loading settings...",
+  "localizationAndTheme": "Localization & Theme",
+  "localizationAndThemeDesc": "Choose your language and app appearance."
 }

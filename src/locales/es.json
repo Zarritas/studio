@@ -178,7 +178,7 @@
   "apiKeyManagementDesc": "Gestiona tus claves API para los servicios de IA.",
   "geminiApiKeyLabel": "Clave API de Gemini",
   "geminiApiKeyPlaceholder": "Introduce tu Clave API de Google Gemini",
-  "geminiApiKeyDesc": "Tu Clave API de Gemini se utilizará para las sugerencias impulsadas por IA. Se almacena localmente en tu navegador.",
+  "geminiApiKeyDesc": "Tu Clave API de Gemini se utilizará para las sugerencias impulsadas por IA. Se almacena con tu perfil de usuario.",
   "apiKeyRequiredTitle": "Clave API Requerida",
   "apiKeyRequiredDesc": "Por favor, configura tu Clave API de Gemini en los ajustes para usar las funciones de IA.",
   "apiKeyRequiredTooltip": "Se necesita Clave API de Gemini para funciones de IA.",
@@ -191,5 +191,11 @@
   "apiKeyInvalidDesc": "La clave API no pudo ser verificada. Por favor, revísala e inténtalo de nuevo. El resto de la configuración fue guardada.",
   "apiKeyVerificationErrorTitle": "Error de Verificación de Clave API",
   "apiKeyVerificationErrorDesc": "Ocurrió un error al verificar la clave API. Por favor, inténtalo de nuevo. El resto de la configuración fue guardada.",
-  "verifyingApiKeyButtonText": "Verificando..."
+  "verifyingApiKeyButtonText": "Verificando...",
+  "loadingYourData": "Cargando tus datos de TabWise...",
+  "authRequiredToViewDashboard": "Por favor, inicia sesión para ver tu tablero.",
+  "goToLogin": "Ir a Iniciar Sesión",
+  "loadingSettings": "Cargando configuración...",
+  "localizationAndTheme": "Localización y Tema",
+  "localizationAndThemeDesc": "Elige tu idioma y la apariencia de la aplicación."
 }

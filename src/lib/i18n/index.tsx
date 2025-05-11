@@ -1,7 +1,11 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { useAuth } from '@/lib/hooks/use-auth'; // To access user for locale preference
+import { getUserProfile, saveUserSettings } from '@/lib/firebase/firestoreService'; // To save locale preference
+import type { UserSettings } from '@/types/settings';
 
 interface LocaleContextType {
   locale: string;
@@ -16,44 +20,74 @@ const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 export const supportedLocales = [
   { code: "en", name: "English" },
   { code: "es", name: "Español" },
-  // Add more languages here
 ];
 export const defaultLocale = "en";
 const LOCALE_STORAGE_KEY = "tabwise_locale";
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, _setLocale] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(LOCALE_STORAGE_KEY) || defaultLocale;
-    }
-    return defaultLocale;
-  });
+  const { currentUser, isLoading: authIsLoading } = useAuth();
+  const [currentLocale, _setLocale] = useState<string>(defaultLocale);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [isLoadingTranslations, setIsLoadingTranslations] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
+    // Initial locale from localStorage, to prevent flash before Firestore settings load
+    const storedLocale = localStorage.getItem(LOCALE_STORAGE_KEY);
+    if (storedLocale && supportedLocales.some(l => l.code === storedLocale)) {
+      _setLocale(storedLocale);
+    }
   }, []);
 
-  const setLocale = useCallback((newLocale: string) => {
+  // Effect to load locale from user settings once user is available
+  useEffect(() => {
+    if (hasMounted && currentUser && !authIsLoading) {
+      getUserProfile(currentUser.uid).then(profile => {
+        if (profile?.settings?.locale && supportedLocales.some(l => l.code === profile.settings.locale)) {
+          if (profile.settings.locale !== currentLocale) {
+             _setLocale(profile.settings.locale);
+          }
+        }
+        // Translations will be loaded by the next effect based on currentLocale
+      });
+    }
+  }, [currentUser, authIsLoading, hasMounted, currentLocale]);
+
+
+  const setLocale = useCallback(async (newLocale: string) => {
     if (supportedLocales.some(l => l.code === newLocale)) {
       _setLocale(newLocale);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+      localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+      if (currentUser) {
+        // Save to Firestore
+        const profile = await getUserProfile(currentUser.uid);
+        const updatedSettings: UserSettings = {
+          ...(profile?.settings || {
+            // Provide defaults if settings don't exist
+            geminiApiKey: '',
+            autoCloseInactiveTabs: false,
+            inactiveThreshold: 30,
+            aiPreferences: '',
+            theme: 'system',
+          }),
+          locale: newLocale,
+        };
+        await saveUserSettings(currentUser.uid, updatedSettings);
       }
     }
-  }, []); // _setLocale is stable and doesn't need to be in dependencies
+  }, [currentUser]);
 
   useEffect(() => {
     const loadTranslations = async () => {
+      if (!currentLocale) return; // Don't load if locale isn't set
       setIsLoadingTranslations(true);
       try {
-        const module = await import(`@/locales/${locale}.json`);
+        const module = await import(`@/locales/${currentLocale}.json`);
         setTranslations(module.default || module);
       } catch (error) {
-        console.error(`Could not load translations for locale: ${locale}`, error);
-        if (locale !== defaultLocale) {
+        console.error(`Could not load translations for locale: ${currentLocale}`, error);
+        if (currentLocale !== defaultLocale) {
           try {
             const module = await import(`@/locales/${defaultLocale}.json`);
             setTranslations(module.default || module);
@@ -71,7 +105,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     if (hasMounted) {
       loadTranslations();
     }
-  }, [locale, hasMounted]);
+  }, [currentLocale, hasMounted]);
 
   const t = useCallback((key: string, options?: Record<string, string | number | undefined> & { defaultValue?: string }): string => {
     let message = translations[key];
@@ -97,29 +131,36 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     return message;
   }, [translations]);
 
-  if (!hasMounted) {
-    // Render children with isLoadingTranslations: true to match server behavior
-    // and avoid client-side only loading UI during initial render.
-    // The `t` function will use defaults or keys during this phase.
-    return (
-      <LocaleContext.Provider value={{ locale, setLocale, t, supportedLocales, isLoadingTranslations: true }}>
-        {children}
-      </LocaleContext.Provider>
-    );
+  const providerValue = {
+    locale: currentLocale,
+    setLocale,
+    t,
+    supportedLocales,
+    isLoadingTranslations,
+  };
+  
+  if (!hasMounted || (authIsLoading && !currentUser)) {
+    // Still waiting for mount or auth state to settle, show basic loading or nothing
+    // to avoid hydration errors. The `t` function will use defaults or keys.
+     return (
+        <LocaleContext.Provider value={{ ...providerValue, isLoadingTranslations: true }}>
+           {/* Minimal loading UI, or children directly if preferred to avoid layout shift */}
+           {/* <div className="flex items-center justify-center min-h-screen">Loading locale...</div> */}
+           {children}
+        </LocaleContext.Provider>
+     );
   }
 
-  // After mounting, if translations are still loading, show client-side loading indicator.
   if (isLoadingTranslations) {
      return (
-        <LocaleContext.Provider value={{ locale, setLocale, t, supportedLocales, isLoadingTranslations: true }}>
+        <LocaleContext.Provider value={{ ...providerValue, isLoadingTranslations: true }}>
             <div className="flex items-center justify-center min-h-screen">Loading translations...</div>
         </LocaleContext.Provider>
      );
   }
 
-  // Translations loaded and component has mounted.
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t, supportedLocales, isLoadingTranslations: false }}>
+    <LocaleContext.Provider value={providerValue}>
       {children}
     </LocaleContext.Provider>
   );
