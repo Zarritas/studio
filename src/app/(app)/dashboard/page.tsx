@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -9,8 +8,12 @@ import { CreateGroupModal } from '@/components/dashboard/create-group-modal';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Zap, Lightbulb, Trash2, AlertTriangle, Layers3, KeyRound, Loader2 } from 'lucide-react';
-import { suggestTabGroups, SuggestTabGroupsInput, SuggestTabGroupsOutput } from '@/ai/flows/suggest-tab-groups';
-import { suggestInactiveTabsClosure, SuggestInactiveTabsClosureInput, SuggestInactiveTabsClosureOutput } from '@/ai/flows/suggest-inactive-tabs-closure';
+// Removed direct Server Action imports
+// import { suggestTabGroups, SuggestTabGroupsInput, SuggestTabGroupsOutput } from '@/ai/flows/suggest-tab-groups';
+// import { suggestInactiveTabsClosure, SuggestInactiveTabsClosureInput, SuggestInactiveTabsClosureOutput } from '@/ai/flows/suggest-inactive-tabs-closure';
+import type { SuggestTabGroupsInput, SuggestTabGroupsOutput } from '@/ai/flows/suggest-tab-groups'; // Keep types
+import type { SuggestInactiveTabsClosureInput, SuggestInactiveTabsClosureOutput } from '@/ai/flows/suggest-inactive-tabs-closure'; // Keep types
+
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,34 +72,31 @@ function DashboardPageContent() {
   const { t, locale } = useTranslation();
   const [isUngroupedDragOver, setIsUngroupedDragOver] = useState(false);
   const { registerAddTabsBatch, registerCreateGroupsWithTabsBatch } = useDashboardContext();
-  // geminiApiKey and isApiKeyChecked will now come from userSettings
   
   const ungroupedTabs = tabs.filter(tab => !tabGroups.some(group => group.tabs.some(t => t.id === tab.id)));
 
-  // Fetch user data (tabs, groups, settings) from Firestore
   useEffect(() => {
     if (currentUser && !authLoading) {
       setIsLoadingData(true);
       getUserProfile(currentUser.uid)
         .then(profile => {
           if (profile) {
-            // Use exampleInitialTabs only if Firestore has no tabs and it's a new-like user (no settings or specific flag)
-            const useExampleData = (!profile.tabs || profile.tabs.length === 0) && (!profile.settings?.geminiApiKey); // Simple check for "new-ish" user
+            const useExampleData = (!profile.tabs || profile.tabs.length === 0) && (!profile.settings?.geminiApiKey);
             
             setTabs(useExampleData ? exampleInitialTabs : (profile.tabs || []));
             setTabGroups(profile.tabGroups || []);
             setUserSettings(profile.settings || null);
 
              if (useExampleData) {
-              // Persist example tabs for this new user
               saveUserTabs(currentUser.uid, exampleInitialTabs);
             }
           } else {
-            // New user or error, set empty state or example tabs
-            setTabs(exampleInitialTabs); // Provide examples for a brand new user
+            setTabs(exampleInitialTabs); 
             setTabGroups([]);
             setUserSettings(null);
-            saveUserTabs(currentUser.uid, exampleInitialTabs); // Persist example tabs for new user
+            if (currentUser?.uid) { // Ensure currentUser is available before saving
+                 saveUserTabs(currentUser.uid, exampleInitialTabs);
+            }
           }
           setIsLoadingData(false);
         })
@@ -106,7 +106,6 @@ function DashboardPageContent() {
           setIsLoadingData(false);
         });
     } else if (!authLoading) {
-      // No current user and auth is not loading (e.g., logged out)
       setIsLoadingData(false);
       setTabs([]);
       setTabGroups([]);
@@ -165,7 +164,18 @@ function DashboardPageContent() {
         existingGroups: existingGroupsForAI,
         targetLanguage: locale, 
       };
-      const suggestedGroupsOutput: SuggestTabGroupsOutput = await suggestTabGroups(input);
+      
+      const response = await fetch('/api/suggest-tab-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `API request failed with status ${response.status}`);
+      }
+      const suggestedGroupsOutput: SuggestTabGroupsOutput = await response.json();
       
       let nextTabGroupsState = [...tabGroups];
       let nextTabsState = [...tabs]; 
@@ -186,10 +196,8 @@ function DashboardPageContent() {
             if (existingTab) return existingTab;
       
             console.warn(`AI suggested a tab URL not found in current tabs: ${urlFromAI}, schemed as: ${schemedUrl}`);
-            // If AI suggests a URL not in the list, we might want to create a placeholder tab
-            // or ignore it. For now, let's create a placeholder if a valid URL.
             try {
-              const newUrl = new URL(schemedUrl); // Validate schemedUrl
+              const newUrl = new URL(schemedUrl); 
               return { 
                 id: `ai-new-tab-${newUrl.hostname}-${Date.now()}-${index}`, 
                 title: newUrl.hostname, 
@@ -220,7 +228,7 @@ function DashboardPageContent() {
                       groupToUpdate.tabs.push(aiTabFromSuggestion);
                       currentTabsInGroupSet.add(aiTabFromSuggestion.id); 
                       if(aiTabFromSuggestion.isPlaceholder && !nextTabsState.some(t => t.id === aiTabFromSuggestion.id)) {
-                        nextTabsState.push(aiTabFromSuggestion); // Add to global tabs list if it's new
+                        nextTabsState.push(aiTabFromSuggestion);
                       }
                       actuallyAddedNewTabsToThisGroup = true;
                   }
@@ -237,7 +245,7 @@ function DashboardPageContent() {
                 });
                 newGroupTabs.forEach(nt => {
                   if(nt.isPlaceholder && !nextTabsState.some(t => t.id === nt.id)) {
-                    nextTabsState.push(nt); // Add to global tabs list if it's new
+                    nextTabsState.push(nt);
                   }
                 });
                 newGroupsCreatedCount++;
@@ -247,7 +255,7 @@ function DashboardPageContent() {
       
       const finalTabGroups = nextTabGroupsState.filter(g => g.tabs.length > 0 || g.isCustom);
       setTabGroups(finalTabGroups);
-      setTabs(nextTabsState); // Update global tabs if new placeholders were added
+      setTabs(nextTabsState);
 
       if (currentUser) {
         await persistTabsAndGroups(nextTabsState, finalTabGroups);
@@ -289,7 +297,18 @@ function DashboardPageContent() {
     
     try {
       const input: SuggestInactiveTabsClosureInput = { tabActivityData, userPreferences: userPrefsString };
-      const suggestions: SuggestInactiveTabsClosureOutput = await suggestInactiveTabsClosure(input);
+      
+      const response = await fetch('/api/suggest-inactive-tabs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `API request failed with status ${response.status}`);
+      }
+      const suggestions: SuggestInactiveTabsClosureOutput = await response.json();
       
       if (suggestions.tabsToClose.length > 0) {
         toast({
@@ -382,7 +401,7 @@ function DashboardPageContent() {
         group.id === groupId
           ? { ...group, tabs: group.tabs.filter(tab => tab.id !== tabId) }
           : group
-      ).filter(g => g.tabs.length > 0 || g.isCustom); // Keep custom groups even if empty
+      ).filter(g => g.tabs.length > 0 || g.isCustom); 
     setTabGroups(updatedGroups);
     if (currentUser) {
       await persistTabGroups(updatedGroups);
@@ -424,15 +443,15 @@ function DashboardPageContent() {
     if (!tabToAdd) return;
 
     let updatedGroups = tabGroups.map(g => {
-      if (g.tabs.some(t => t.id === tabId)) { // Remove from any existing group first
+      if (g.tabs.some(t => t.id === tabId)) { 
         return { ...g, tabs: g.tabs.filter(t => t.id !== tabId) };
       }
       return g;
     });
     
     updatedGroups = updatedGroups.map(g => {
-      if (g.id === groupId) { // Add to the target group
-        if (!g.tabs.some(t => t.id === tabId)) { // Ensure not already present
+      if (g.id === groupId) { 
+        if (!g.tabs.some(t => t.id === tabId)) { 
           return { ...g, tabs: [...g.tabs, tabToAdd] };
         }
       }
@@ -449,7 +468,7 @@ function DashboardPageContent() {
 
   const handleEditGroupName = async (groupId: string, newName: string) => {
     const updatedGroups = tabGroups.map(g => 
-        g.id === groupId ? {...g, name: newName, isCustom: true } : g // Editing makes it custom
+        g.id === groupId ? {...g, name: newName, isCustom: true } : g 
       );
     setTabGroups(updatedGroups);
     if (currentUser) {
@@ -468,7 +487,6 @@ function DashboardPageContent() {
   
     let newGroups = [...tabGroups];
     
-    // Remove from source group if it was in one
     if (sourceType === 'group' && sourceGroupId) {
       newGroups = newGroups.map(g => 
         g.id === sourceGroupId 
@@ -477,7 +495,6 @@ function DashboardPageContent() {
       );
     }
   
-    // Add to target group
     const targetGroupIndex = newGroups.findIndex(g => g.id === targetGroupId);
     if (targetGroupIndex !== -1 && !newGroups[targetGroupIndex].tabs.some(t => t.id === tabId)) {
       newGroups[targetGroupIndex] = {
@@ -597,7 +614,7 @@ function DashboardPageContent() {
     if (registerAddTabsBatch && registerCreateGroupsWithTabsBatch) {
         registerAddTabsBatch(handleAddTabsBatch);
         registerCreateGroupsWithTabsBatch(handleCreateGroupsWithTabsBatch);
-        return () => { // Cleanup: unregister the functions
+        return () => { 
           registerAddTabsBatch(null); 
           registerCreateGroupsWithTabsBatch(null);
         };
@@ -607,7 +624,7 @@ function DashboardPageContent() {
   const hasAiGroups = tabGroups.some(g => !g.isCustom);
 
   const AiSuggestButtonWrapper = ({children}: {children: React.ReactNode}) => {
-    if (userSettings && userSettings.geminiApiKey) { // Check if settings are loaded and API key exists
+    if (userSettings && userSettings.geminiApiKey) { 
         return <>{children}</>;
     }
     return (
@@ -637,8 +654,6 @@ function DashboardPageContent() {
   }
   
   if (!currentUser && !authLoading) {
-    // This case should ideally be handled by AuthProvider redirecting to login
-    // but as a fallback or if user lands here directly somehow:
     return (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-150px)]">
             <AlertTriangle className="h-12 w-12 text-destructive" />
@@ -754,8 +769,6 @@ function DashboardPageContent() {
                   onExportGroup={handleExportGroup}
                   onAddTabToGroup={(groupId) => {
                       if (ungroupedTabs.length > 0) {
-                          // Potentially show a dropdown or modal to select which ungrouped tab to add
-                          // For simplicity, let's find the first ungrouped tab
                           const firstUngroupedTab = ungroupedTabs[0];
                           if (firstUngroupedTab) {
                             handleAddTabToGroup(groupId, firstUngroupedTab.id);
@@ -808,14 +821,13 @@ function DashboardPageContent() {
                   sourceInfo={{ type: 'ungrouped' }}
                   onRemove={async (tabId) => {
                     const newTabs = tabs.filter(t => t.id !== tabId);
-                    // Also ensure this tab is removed if it was somehow in a group (shouldn't be if it's in ungroupedTabs)
                     const newTabGroups = tabGroups.map(group => ({
                         ...group,
                         tabs: group.tabs.filter(t => t.id !== tabId)
                       })).filter(group => group.tabs.length > 0 || group.isCustom);
                     
                     setTabs(newTabs);
-                    setTabGroups(newTabGroups); // Though it shouldn't affect groups if truly ungrouped
+                    setTabGroups(newTabGroups); 
                     if (currentUser) {
                         await persistTabsAndGroups(newTabs, newTabGroups);
                     }

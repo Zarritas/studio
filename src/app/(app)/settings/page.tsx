@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -18,18 +17,19 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/lib/i18n';
 import { KeyRound, Loader2 } from 'lucide-react';
-import { validateApiKey } from '@/ai/flows/validate-api-key-flow';
+// Removed direct Server Action import
+// import { validateApiKey } from '@/ai/flows/validate-api-key-flow';
+import type { ValidateApiKeyInput, ValidateApiKeyOutput } from '@/ai/flows/validate-api-key-flow'; // Keep types
 import { useAuth } from '@/lib/hooks/use-auth';
 import { getUserProfile, saveUserSettings } from '@/lib/firebase/firestoreService';
 import type { UserSettings } from '@/types/settings';
-import { ThemeToggle } from '@/components/theme-toggle'; // For theme setting
+import { ThemeToggle } from '@/components/theme-toggle'; 
 
 const defaultSettings: UserSettings = {
   autoCloseInactiveTabs: false,
   inactiveThreshold: 30,
   aiPreferences: "",
   geminiApiKey: "",
-  initialGeminiApiKey: "", // This is not part of UserSettings in DB
   locale: "en",
   theme: "system",
 };
@@ -40,11 +40,10 @@ export default function SettingsPage() {
   const { currentUser, isLoading: authLoading } = useAuth();
 
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [initialGeminiApiKey, setInitialGeminiApiKey] = useState(""); // Used to track changes for validation
+  const [initialGeminiApiKey, setInitialGeminiApiKey] = useState(""); 
   const [isVerifyingApiKey, setIsVerifyingApiKey] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
-  // Load settings from Firestore on component mount or when user changes
   useEffect(() => {
     if (currentUser && !authLoading) {
       setIsLoadingSettings(true);
@@ -53,12 +52,12 @@ export default function SettingsPage() {
           setSettings(profile.settings);
           setInitialGeminiApiKey(profile.settings.geminiApiKey || "");
           if (profile.settings.locale && profile.settings.locale !== locale) {
-            setGlobalLocale(profile.settings.locale); // Sync global locale
+            setGlobalLocale(profile.settings.locale); 
           }
         } else {
-          // No settings found, use defaults (already set in useState)
-          // Optionally save default settings to Firestore here for new users
-          saveUserSettings(currentUser.uid, defaultSettings);
+          if (currentUser?.uid) { // Ensure currentUser is available before saving
+            saveUserSettings(currentUser.uid, defaultSettings);
+          }
         }
         setIsLoadingSettings(false);
       }).catch(err => {
@@ -67,7 +66,6 @@ export default function SettingsPage() {
         setIsLoadingSettings(false);
       });
     } else if (!authLoading) {
-      // No user, reset to defaults or handle as appropriate
       setSettings(defaultSettings);
       setIsLoadingSettings(false);
     }
@@ -79,7 +77,7 @@ export default function SettingsPage() {
   
   const handleLocaleChange = (newLocale: string) => {
     handleSettingChange('locale', newLocale);
-    setGlobalLocale(newLocale); // Update global context immediately
+    setGlobalLocale(newLocale); 
   };
 
   const handleSaveSettings = async () => {
@@ -94,9 +92,20 @@ export default function SettingsPage() {
     if (settings.geminiApiKey && settings.geminiApiKey !== initialGeminiApiKey) {
       setIsVerifyingApiKey(true);
       try {
-        const validationResult = await validateApiKey({ apiKey: settings.geminiApiKey });
+        const apiKeyInput: ValidateApiKeyInput = { apiKey: settings.geminiApiKey };
+        const response = await fetch('/api/validate-api-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(apiKeyInput),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `API request failed with status ${response.status}`);
+        }
+        const validationResult: ValidateApiKeyOutput = await response.json();
+
         if (validationResult.isValid) {
-          // apiKeyToSave is already set to settings.geminiApiKey
           newApiKeySuccessfullyVerified = true;
           toast({
             title: t("apiKeyVerifiedTitle"),
@@ -104,7 +113,7 @@ export default function SettingsPage() {
             variant: "default", 
           });
         } else {
-          apiKeyToSave = initialGeminiApiKey; // Revert to old key if new one is invalid
+          apiKeyToSave = initialGeminiApiKey; 
           toast({
             title: t("apiKeyInvalidTitle"),
             description: validationResult.error || t("apiKeyInvalidDesc"),
@@ -112,7 +121,7 @@ export default function SettingsPage() {
           });
         }
       } catch (error) {
-        apiKeyToSave = initialGeminiApiKey; // Revert on verification error
+        apiKeyToSave = initialGeminiApiKey; 
         toast({
           title: t("apiKeyVerificationErrorTitle"),
           description: (error as Error).message || t("apiKeyVerificationErrorDesc"),
@@ -130,8 +139,8 @@ export default function SettingsPage() {
     const success = await saveUserSettings(currentUser.uid, settingsToSave);
     
     if (success) {
-      setSettings(settingsToSave); // Update local state with potentially reverted API key
-      setInitialGeminiApiKey(apiKeyToSave); // Update initial key state
+      setSettings(settingsToSave); 
+      setInitialGeminiApiKey(apiKeyToSave); 
       if (!settings.geminiApiKey || settings.geminiApiKey === initialGeminiApiKey || newApiKeySuccessfullyVerified) {
         toast({
             title: t("settingsSaved"),
@@ -289,4 +298,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
