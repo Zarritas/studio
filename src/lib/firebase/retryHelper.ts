@@ -1,6 +1,11 @@
 
-import { retry, type RetryOptions, AbortError } from '@lifeomic/attempt';
+import { retry, type RetryOptions } from '@lifeomic/attempt';
 import type { FirebaseError } from 'firebase/app';
+
+// Type guard to check for AbortError by its name property
+function isAbortError(error: unknown): error is Error & { name: 'AbortError', cause?: unknown } {
+  return typeof error === 'object' && error !== null && (error as Error).name === 'AbortError';
+}
 
 // Default retry options for Firestore operations
 const defaultRetryOptions: Partial<RetryOptions<any>> = {
@@ -13,7 +18,7 @@ const defaultRetryOptions: Partial<RetryOptions<any>> = {
     // Example: Don't retry on permission denied, as it's unlikely to resolve with retries
     if (firebaseError.code === 'permission-denied' || firebaseError.code === 'unauthenticated') {
       console.error('Aborting retries due to permission-denied or unauthenticated error.');
-      context.abort(); // AbortError will be thrown by retry
+      context.abort(); // This will cause retry to throw an error that isAbortError should catch
     }
     // Add other non-retryable error codes as needed
   },
@@ -34,7 +39,7 @@ export async function withFirestoreWriteRetry(
   try {
     await retry(writeOperation, { ...defaultRetryOptions, ...options });
   } catch (error) {
-    if (error instanceof AbortError) {
+    if (isAbortError(error)) {
         console.error("Firestore write operation aborted (e.g. due to non-retryable error):", (error.cause as Error)?.message || error.message);
     } else {
         console.error("Firestore write operation failed after multiple retries:", (error as Error).message);
@@ -57,7 +62,7 @@ export async function withFirestoreReadRetry<T>(
   try {
     return await retry(readOperation, { ...defaultRetryOptions, ...options });
   } catch (error) {
-     if (error instanceof AbortError) {
+     if (isAbortError(error)) {
         console.error("Firestore read operation aborted (e.g. due to non-retryable error):", (error.cause as Error)?.message || error.message);
     } else {
         console.error("Firestore read operation failed after multiple retries:", (error as Error).message);
@@ -65,3 +70,4 @@ export async function withFirestoreReadRetry<T>(
     throw error; // Re-throw the error for the caller to handle
   }
 }
+
