@@ -72,7 +72,7 @@ function DashboardPageContent() {
   const { toast } = useToast();
   const { t, locale } = useTranslation();
   const [isUngroupedDragOver, setIsUngroupedDragOver] = useState(false);
-  const { registerAddTabsBatch } = useDashboardContext();
+  const { registerAddTabsBatch, registerCreateGroupsWithTabsBatch } = useDashboardContext();
 
   const ungroupedTabs = tabs.filter(tab => !tabGroups.some(group => group.tabs.some(t => t.id === tab.id)));
 
@@ -240,11 +240,22 @@ function DashboardPageContent() {
   };
 
   const handleAddTab = (newTab: Omit<Tab, 'id' | 'lastAccessed'>) => {
+    let hostname = 'new-tab';
+    let fullUrl = newTab.url;
+    try {
+        if (!/^https?:\/\//i.test(newTab.url)) {
+          fullUrl = `https://${newTab.url}`;
+        }
+        hostname = new URL(fullUrl).hostname;
+    } catch (e) {
+        console.warn(`Invalid URL for manual tab: ${newTab.url}`);
+    }
     const tabWithId: Tab = { 
-      ...newTab, 
-      id: `manual-${Date.now()}`, 
+      ...newTab,
+      url: fullUrl,
+      id: `manual-${hostname}-${Date.now()}`, 
       lastAccessed: Date.now(),
-      faviconUrl: `https://www.google.com/s2/favicons?domain=${new URL(newTab.url).hostname}&sz=32`
+      faviconUrl: `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`
     };
     setTabs(prevTabs => [...prevTabs, tabWithId]);
     toast({ title: t("tabAdded"), description: t("tabAddedDesc", { title: tabWithId.title }) });
@@ -252,7 +263,7 @@ function DashboardPageContent() {
 
   const handleCreateCustomGroup = (groupName: string) => {
     const newGroup: TabGroupType = {
-      id: `custom-group-${Date.now()}`,
+      id: `custom-group-${Date.now()}-${groupName.replace(/\s+/g, '-')}`,
       name: groupName,
       tabs: [],
       isCustom: true,
@@ -378,9 +389,8 @@ function DashboardPageContent() {
   const handleAddTabsBatch = useCallback((tabsData: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[]) => {
     const newTabsWithIds: Tab[] = tabsData.map((tab, index) => {
         let hostname = 'new-tab';
+        let fullUrl = tab.url;
         try {
-            // Ensure URL has a scheme, default to https if missing
-            let fullUrl = tab.url;
             if (!/^https?:\/\//i.test(tab.url)) {
               fullUrl = `https://${tab.url}`;
             }
@@ -390,6 +400,7 @@ function DashboardPageContent() {
         }
         return {
             ...tab,
+            url: fullUrl,
             id: `imported-${hostname}-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`,
             lastAccessed: Date.now(),
             faviconUrl: `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`,
@@ -398,14 +409,59 @@ function DashboardPageContent() {
     });
     setTabs(prevTabs => [...prevTabs, ...newTabsWithIds]);
     toast({ title: t("tabsImported"), description: t("tabsImportedDesc", { count: newTabsWithIds.length }) });
-  }, [setTabs, toast, t]); // Dependencies for useCallback
+  }, [setTabs, toast, t]);
+
+  const handleCreateGroupsWithTabsBatch = useCallback((groupsData: { name: string, tabs: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[] }[]) => {
+    const newGroups: TabGroupType[] = [];
+    const allNewTabsForGlobalList: Tab[] = [];
+
+    groupsData.forEach((groupData, groupIndex) => {
+      const newGroupId = `imported-group-${Date.now()}-${groupIndex}-${groupData.name.replace(/\s+/g, '-')}`;
+      const processedTabsForGroup: Tab[] = groupData.tabs.map((tab, tabIndex) => {
+        let hostname = 'new-tab';
+        let fullUrl = tab.url;
+        try {
+            if (!/^https?:\/\//i.test(tab.url)) {
+              fullUrl = `https://${tab.url}`;
+            }
+            hostname = new URL(fullUrl).hostname;
+        } catch (e) {
+            console.warn(`Invalid URL in group batch: ${tab.url}`);
+        }
+        return {
+          ...tab,
+          url: fullUrl,
+          id: `imported-gtab-${hostname}-${Date.now()}-${groupIndex}-${tabIndex}-${Math.random().toString(36).substring(2,7)}`,
+          lastAccessed: Date.now(),
+          faviconUrl: `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`,
+          isPlaceholder: true,
+        };
+      });
+      
+      newGroups.push({
+        id: newGroupId,
+        name: groupData.name,
+        tabs: processedTabsForGroup,
+        isCustom: true, // Imported groups are treated as custom
+      });
+      allNewTabsForGlobalList.push(...processedTabsForGroup);
+    });
+
+    setTabGroups(prevGroups => [...prevGroups, ...newGroups]);
+    setTabs(prevTabs => [...prevTabs, ...allNewTabsForGlobalList]); // Add to global tabs list as well
+
+    toast({ title: t("groupsImported"), description: t("groupsImportedDesc", { count: newGroups.length }) });
+  }, [setTabGroups, setTabs, toast, t]);
+
 
   useEffect(() => {
     registerAddTabsBatch(handleAddTabsBatch);
+    registerCreateGroupsWithTabsBatch(handleCreateGroupsWithTabsBatch);
     return () => {
-      registerAddTabsBatch(null); // Cleanup on unmount
+      registerAddTabsBatch(null); 
+      registerCreateGroupsWithTabsBatch(null);
     };
-  }, [registerAddTabsBatch, handleAddTabsBatch]);
+  }, [registerAddTabsBatch, handleAddTabsBatch, registerCreateGroupsWithTabsBatch, handleCreateGroupsWithTabsBatch]);
 
   const hasAiGroups = tabGroups.some(g => !g.isCustom);
 

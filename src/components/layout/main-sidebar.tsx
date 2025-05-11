@@ -21,6 +21,7 @@ import { Home, Settings, UploadCloud, Bookmark, LogOut, Layers3 } from 'lucide-r
 import { useAuth } from '@/lib/hooks/use-auth';
 import { useTranslation } from '@/lib/i18n';
 import { ImportActiveTabsModal } from '@/components/dashboard/import-active-tabs-modal';
+import { ImportBookmarksModal } from '@/components/dashboard/import-bookmarks-modal';
 
 
 export function MainSidebar() {
@@ -33,15 +34,6 @@ export function MainSidebar() {
     { href: '/settings', label: t('settings'), icon: Settings },
   ];
   
-  // Define importNavItems structure for type consistency if needed,
-  // but direct rendering of ImportActiveTabsModal below is clearer.
-  const bookmarkImportItem = { 
-    label: t('importBookmarks'), 
-    icon: Bookmark, 
-    action: () => alert(t('featureNotImplemented', {feature: t('importBookmarks')})) 
-  };
-
-
   return (
     <Sidebar side="left" variant="sidebar" collapsible="icon">
       <SidebarHeader className="p-4 flex items-center justify-between">
@@ -90,10 +82,14 @@ export function MainSidebar() {
                   }
                 />
               </SidebarMenuItem>
-              <SidebarMenuItem key={bookmarkImportItem.label}>
-                  <SidebarMenuButton onClick={bookmarkImportItem.action} tooltip={bookmarkImportItem.label}>
-                    <bookmarkImportItem.icon /><span>{bookmarkImportItem.label}</span>
-                  </SidebarMenuButton>
+              <SidebarMenuItem>
+                <ImportBookmarksModal
+                  triggerButton={
+                    <SidebarMenuButton tooltip={t('importBookmarks')}>
+                      <Bookmark /><span>{t('importBookmarks')}</span>
+                    </SidebarMenuButton>
+                  }
+                />
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>

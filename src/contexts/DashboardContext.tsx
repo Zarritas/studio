@@ -4,10 +4,13 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
 type AddTabsBatchFn = (tabsData: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[]) => void;
+type CreateGroupsWithTabsBatchFn = (groupsData: { name: string, tabs: Omit<Tab, 'id' | 'lastAccessed' | 'faviconUrl' | 'isPlaceholder'>[] }[]) => void;
 
 interface DashboardContextType {
   addTabsBatch: AddTabsBatchFn | null;
   registerAddTabsBatch: (fn: AddTabsBatchFn | null) => void;
+  createGroupsWithTabsBatch: CreateGroupsWithTabsBatchFn | null;
+  registerCreateGroupsWithTabsBatch: (fn: CreateGroupsWithTabsBatchFn | null) => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -22,13 +25,23 @@ export function useDashboardContext() {
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const [addTabsBatchFn, setAddTabsBatchFn] = useState<AddTabsBatchFn | null>(null);
+  const [createGroupsWithTabsBatchFn, setCreateGroupsWithTabsBatchFn] = useState<CreateGroupsWithTabsBatchFn | null>(null);
 
   const registerAddTabsBatch = useCallback((fn: AddTabsBatchFn | null) => {
     setAddTabsBatchFn(() => fn);
   }, []);
 
+  const registerCreateGroupsWithTabsBatch = useCallback((fn: CreateGroupsWithTabsBatchFn | null) => {
+    setCreateGroupsWithTabsBatchFn(() => fn);
+  }, []);
+
   return (
-    <DashboardContext.Provider value={{ addTabsBatch: addTabsBatchFn, registerAddTabsBatch }}>
+    <DashboardContext.Provider value={{ 
+      addTabsBatch: addTabsBatchFn, 
+      registerAddTabsBatch,
+      createGroupsWithTabsBatch: createGroupsWithTabsBatchFn,
+      registerCreateGroupsWithTabsBatch
+    }}>
       {children}
     </DashboardContext.Provider>
   );

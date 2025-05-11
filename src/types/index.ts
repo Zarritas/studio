@@ -16,7 +16,7 @@ export interface TabGroup {
   isCustom?: boolean; // Flag if group was created by user or AI
 }
 
-// Add type definitions for chrome.tabs API
+// Add type definitions for chrome APIs
 // This is a simplified version. For full types, you might consider @types/chrome.
 declare global {
   interface Window {
@@ -31,6 +31,9 @@ declare global {
         lastError?: {
           message?: string;
         };
+      };
+      bookmarks?: {
+        getTree: (callback: (results: chrome.bookmarks.BookmarkTreeNode[]) => void) => void;
       };
     };
   }
@@ -89,5 +92,19 @@ declare global {
     type TabStatus = "loading" | "complete";
     type WindowType = "normal" | "popup" | "panel" | "app" | "devtools";
     type MutedInfoReason = "user" | "capture" | "extension";
+  }
+
+  namespace chrome.bookmarks {
+    interface BookmarkTreeNode {
+      id: string;
+      parentId?: string;
+      index?: number;
+      url?: string;
+      title: string;
+      dateAdded?: number;
+      dateGroupModified?: number;
+      unmodifiable?: "managed";
+      children?: BookmarkTreeNode[];
+    }
   }
 }
