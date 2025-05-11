@@ -61,7 +61,13 @@ Only create a NEW tab group for \`ungroupedUrls\` if:
 1. No \`existingGroup\` is a suitable thematic match, based on a thorough analysis of both its name and its current tabs' collective content.
 2. The \`ungroupedUrls\` form a distinct new theme not covered by any existing group.
 
-CRITICAL: AVOID CREATING A NEW GROUP IF AN EXISTING GROUP HAS A VERY SIMILAR NAME OR ALREADY COVERS THE SAME TOPIC/THEME (as determined by its name AND its current tabs). In such cases, you MUST add the relevant \`ungroupedUrls\` to that existing group instead of creating a duplicate or near-duplicate group. For example, if an existing group is named "CSS Resources" and contains CSS-related tabs, and an ungrouped tab is about "Tailwind CSS", DO NOT create a new group named "CSS" or "Tailwind". Instead, ADD the "Tailwind CSS" tab to the existing "CSS Resources" group. BE VERY STRICT ABOUT THIS RULE.
+ABSOLUTELY CRITICAL: YOUR TOP PRIORITY IS TO AVOID CREATING REDUNDANT GROUPS.
+Before creating ANY new group, you MUST perform a thorough check:
+1. Examine ALL \`existingGroups\`.
+2. For each \`existingGroup\`, consider its \`groupName\` AND the collective theme of its \`tabUrls\`.
+3. If an \`ungroupedUrl\` (or a set of them) thematically fits an \`existingGroup\`, you MUST add it to that existing group.
+4. DO NOT CREATE A NEW GROUP if its theme or name would be substantially similar to, or a subset/superset of, an \`existingGroup\`'s theme or name. For instance, if "Frontend Development" exists and contains HTML/CSS/JS tabs, do not create a new "CSS Styles" group for CSS-related tabs; add them to "Frontend Development". If "Social Media" exists, do not create a "Twitter" group; add Twitter tabs to "Social Media". If an existing group is named "CSS Resources" and contains CSS-related tabs, and an ungrouped tab is about "Tailwind CSS", DO NOT create a new group named "CSS" or "Tailwind". Instead, ADD the "Tailwind CSS" tab to the existing "CSS Resources" group.
+BE EXTREMELY STRICT ABOUT THIS. Preferring to slightly broaden an existing group's scope by adding related tabs is ALWAYS better than creating a new, very similar group.
 
 Output Instructions:
 - Respond with a JSON array of group objects.
@@ -78,7 +84,6 @@ Output Instructions:
 - Prefer adding to non-custom (\`isCustom: false\`) existing groups if a thematic fit exists.
 - If adding to a CUSTOM (\`isCustom: true\`) existing group, ensure the thematic fit (based on its existing tabs and name) is very strong and the addition is clearly beneficial.
 - When considering adding to an \`existingGroup\`, deeply analyze its \`groupName\` and, CRUCIALLY, its current \`tabUrls\` to accurately understand its theme or purpose. The collective content of these tabs (URLs) defines the group's scope. Be flexible: an ungrouped tab might belong to an existing group even if its title doesn't perfectly match the group's name, as long as it aligns with the group's overall topic and content as indicated by its existing tabs.
-- DO NOT create a new group if an existing group with a very similar name or theme (judged by its name AND its current tabs) already exists. Instead, add the relevant ungrouped tabs to that existing group. This is critical for avoiding redundant groups.
 - If some \`ungroupedUrls\` cannot be reasonably grouped or added to existing groups, you can omit them from your suggestions (they will remain ungrouped).
 - If no \`ungroupedUrls\` are provided, or no actions are taken (no new groups created, no tabs added to existing groups), return an empty array.
 
